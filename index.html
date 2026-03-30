@@ -73,18 +73,17 @@
     .vi-title { font-family:'Syne',sans-serif; font-size:.85rem; font-weight:700; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
     .vi-sub { font-size:.63rem; color:var(--muted); margin-top:.25rem; }
 
-    /* Progress bar */
     #progress-wrap { display:none; margin-top:1rem; }
     .prog-label { font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.4rem; }
     .prog-bar-bg { background:var(--bg); border:1px solid var(--border); border-radius:2px; height:6px; overflow:hidden; }
-    .prog-bar-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .3s ease; width:0%; }
-    .prog-sub { font-size:.62rem; color:var(--muted); margin-top:.3rem; }
+    .prog-bar-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .4s ease; width:0%; }
+    .prog-sub { font-size:.62rem; color:var(--muted); margin-top:.3rem; word-break:break-all; min-height:1em; }
 
-    /* Download button */
     #dl-btn-wrap { display:none; margin-top:1.25rem; }
     .dl-btn { display:flex; align-items:center; justify-content:center; gap:.6rem; width:100%; background:var(--accent); border:none; border-radius:var(--r); color:#000; cursor:pointer; font-family:'Syne',sans-serif; font-size:1rem; font-weight:800; letter-spacing:.04em; padding:.9rem 1.4rem; transition:transform .1s,box-shadow .1s; }
     .dl-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(232,255,71,.4); }
     .dl-btn:active { transform:none; }
+    .dl-btn:disabled { opacity:.35; cursor:not-allowed; transform:none; box-shadow:none; }
 
     footer { margin-top:2rem; font-size:.62rem; color:var(--muted); text-align:center; line-height:1.9; }
     footer a { color:#3a3a3a; text-decoration:none; }
@@ -106,7 +105,7 @@
     <div class="card">
       <div class="notice">
         <strong>⚠</strong> Only download content you have rights to — Creative Commons, public domain, or your own videos.<br/>
-        <strong>ℹ</strong> Merging is done <strong>entirely in your browser</strong> using FFmpeg.wasm. No files leave your device.
+        <strong>ℹ</strong> Merging runs entirely in your browser via FFmpeg.wasm. No data leaves your device.
       </div>
 
       <div class="lbl">YouTube URL</div>
@@ -126,7 +125,7 @@
       </div>
 
       <div id="progress-wrap">
-        <div class="prog-label" id="prog-label">Loading FFmpeg…</div>
+        <div class="prog-label" id="prog-label">Loading…</div>
         <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-bar"></div></div>
         <div class="prog-sub" id="prog-sub"></div>
       </div>
@@ -144,13 +143,15 @@
     </footer>
   </div>
 
-  <!-- FFmpeg.wasm via CDN -->
-  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
-  <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
-
   <script>
     const KEY  = '84ff588c9bmsh25a213355c21977p1c6997jsnf9a1fe621e32';
     const HOST = 'ytstream-download-youtube-videos.p.rapidapi.com';
+
+    // Use jsDelivr for all FFmpeg assets — it sends proper CORS headers
+    // Use core-st (single-threaded) so no SharedArrayBuffer / COOP headers needed
+    const FFMPEG_JS  = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js';
+    const FFUTIL_JS  = 'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js';
+    const CORE_BASE  = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core-st@0.12.6/dist/umd';
 
     const logEl        = document.getElementById('log');
     const vinfoEl      = document.getElementById('vinfo');
@@ -162,85 +163,82 @@
     const dlBtn        = document.getElementById('dl-btn');
     const goBtn        = document.getElementById('go');
 
-    let ffmpegReady = false;
-    let ffmpegInstance = null;
-    let pendingDownload = null; // { videoUrl, audioUrl, title }
+    let ffLoaded = false;
+    let ffInst   = null;
+    let pending  = null;
+
+    // ── UI helpers ────────────────────────────────────────────────────────────
 
     function addLog(msg, type = 'info') {
       logEl.style.display = 'block';
       const dc = { spin:'d-spin', ok:'d-ok', err:'d-err', info:'d-info' }[type] || 'd-info';
-      const hi = (type === 'spin' || type === 'ok') ? 'hi' : '';
       const el = document.createElement('div');
       el.className = 'log-line';
-      el.innerHTML = `<div class="dot ${dc}"></div><div class="log-text ${hi}">${msg}</div>`;
+      el.innerHTML = `<div class="dot ${dc}"></div><div class="log-text ${type==='ok'||type==='spin'?'hi':''}">${msg}</div>`;
       logEl.appendChild(el);
       return el;
     }
-
+    function updateLog(el, msg, type) {
+      el.querySelector('.dot').className = `dot ${{ spin:'d-spin', ok:'d-ok', err:'d-err', info:'d-info' }[type]||'d-info'}`;
+      const lt = el.querySelector('.log-text');
+      lt.textContent = msg;
+      if (type === 'ok') lt.classList.add('hi');
+    }
+    function setProgress(pct, label, sub) {
+      progressWrap.style.display = 'block';
+      progBar.style.width = pct + '%';
+      if (label !== undefined) progLabel.textContent = label;
+      if (sub   !== undefined) progSub.textContent   = sub;
+    }
     function reset() {
       logEl.innerHTML = ''; logEl.style.display = 'none';
       vinfoEl.style.display = 'none';
       progressWrap.style.display = 'none';
       dlBtnWrap.style.display = 'none';
-      pendingDownload = null;
+      pending = null;
       progBar.style.width = '0%';
       progSub.textContent = '';
     }
-
     function extractId(url) {
       const m = url.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([A-Za-z0-9_-]{11})/);
       return m ? m[1] : null;
     }
-
-    function humanSize(bytes) {
-      if (!bytes) return '';
-      const mb = parseInt(bytes) / 1024 / 1024;
-      return mb > 1 ? `${mb.toFixed(1)} MB` : `${(parseInt(bytes)/1024).toFixed(0)} KB`;
-    }
-
     function fmtTime(s) {
       if (!s) return '';
-      const m = Math.floor(s / 60), sec = s % 60;
-      return `${m}:${String(sec).padStart(2, '0')}`;
+      return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
     }
-
     function toArr(obj) {
       return obj ? (Array.isArray(obj) ? obj : Object.values(obj)) : [];
     }
-
-    // Pick best video stream at or near 1080p
-    function pickVideo(adaptiveFormats) {
-      const videos = adaptiveFormats
-        .filter(f => f.url && f.mimeType?.includes('video'))
-        .sort((a, b) => (parseInt(b.height)||0) - (parseInt(a.height)||0));
-
-      // Prefer 1080p mp4 (H.264) for max compatibility
-      const p1080mp4 = videos.find(f => parseInt(f.height) === 1080 && f.mimeType?.includes('mp4'));
-      if (p1080mp4) return p1080mp4;
-      // Any 1080p
-      const p1080 = videos.find(f => parseInt(f.height) === 1080);
-      if (p1080) return p1080;
-      // Best available
-      return videos[0] || null;
+    function pickVideo(adaptive) {
+      const vs = adaptive.filter(f => f.url && f.mimeType?.includes('video'))
+                         .sort((a,b) => (parseInt(b.height)||0)-(parseInt(a.height)||0));
+      return vs.find(f => parseInt(f.height)===1080 && f.mimeType?.includes('mp4'))
+          || vs.find(f => parseInt(f.height)===1080)
+          || vs[0] || null;
+    }
+    function pickAudio(adaptive) {
+      const as = adaptive.filter(f => f.url && f.mimeType?.includes('audio'))
+                         .sort((a,b) => (parseInt(b.averageBitrate||b.bitrate)||0)-(parseInt(a.averageBitrate||a.bitrate)||0));
+      return as.find(f => f.mimeType?.includes('mp4a')) || as[0] || null;
+    }
+    function loadScript(src) {
+      return new Promise((res, rej) => {
+        if (document.querySelector(`script[src="${src}"]`)) { res(); return; }
+        const s = document.createElement('script');
+        s.src = src; s.crossOrigin = 'anonymous';
+        s.onload = res; s.onerror = () => rej(new Error(`Failed to load script: ${src}`));
+        document.head.appendChild(s);
+      });
     }
 
-    // Pick best audio stream (highest bitrate, prefer mp4/aac for compat)
-    function pickAudio(adaptiveFormats) {
-      const audios = adaptiveFormats
-        .filter(f => f.url && f.mimeType?.includes('audio'))
-        .sort((a, b) => (parseInt(b.averageBitrate||b.bitrate)||0) - (parseInt(a.averageBitrate||a.bitrate)||0));
-
-      const aacAudio = audios.find(f => f.mimeType?.includes('mp4a'));
-      if (aacAudio) return aacAudio;
-      return audios[0] || null;
-    }
+    // ── Fetch video info ──────────────────────────────────────────────────────
 
     async function go() {
       const raw = document.getElementById('url').value.trim();
       if (!raw) { document.getElementById('url').focus(); return; }
-
       const id = extractId(raw);
-      if (!id) { reset(); addLog('Could not find a YouTube video ID in that URL.', 'err'); return; }
+      if (!id) { reset(); addLog('Could not parse a YouTube video ID from that URL.', 'err'); return; }
 
       reset();
       goBtn.disabled = true;
@@ -250,196 +248,150 @@
         const res = await fetch(`https://${HOST}/dl?id=${id}`, {
           headers: { 'x-rapidapi-key': KEY, 'x-rapidapi-host': HOST }
         });
-
-        if (res.status === 429) throw new Error('Rate limit hit — try again in a minute.');
-        if (res.status === 403) throw new Error('API key error or subscription issue.');
+        if (res.status === 429) throw new Error('Rate-limited — wait a minute and try again.');
+        if (res.status === 403) throw new Error('API key / subscription error (check RapidAPI).');
         if (!res.ok) throw new Error(`API error ${res.status}`);
-
         const d = await res.json();
-        if (d.status && d.status !== 'OK') throw new Error(`API returned: ${d.status}`);
+        if (d.status && d.status !== 'OK') throw new Error(`API: ${d.status}`);
 
-        sl.querySelector('.dot').className = 'dot d-ok';
-        sl.querySelector('.log-text').textContent = `Got "${d.title || 'video'}" — selecting best streams…`;
-        sl.querySelector('.log-text').classList.add('hi');
+        updateLog(sl, `Got "${d.title||'video'}" — selecting streams…`, 'ok');
 
-        // Show video info
         if (d.title) {
           document.getElementById('vtitle').textContent = d.title;
           document.getElementById('vsub').textContent =
             [d.channelTitle, fmtTime(parseInt(d.lengthSeconds))].filter(Boolean).join(' · ');
           const thumbs = d.thumbnail;
-          const thumbUrl = Array.isArray(thumbs)
-            ? thumbs[thumbs.length - 1]?.url
-            : (thumbs?.[Object.keys(thumbs).sort((a, b) => b - a)[0]]?.url
-               || `https://img.youtube.com/vi/${id}/hqdefault.jpg`);
-          document.getElementById('vthumb').src = thumbUrl || `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+          const tu = Array.isArray(thumbs) ? thumbs[thumbs.length-1]?.url
+            : thumbs?.[Object.keys(thumbs).sort((a,b)=>b-a)[0]]?.url
+            || `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+          document.getElementById('vthumb').src = tu;
           vinfoEl.style.display = 'flex';
         }
 
-        const adaptiveFormats = toArr(d.adaptiveFormats);
-        const videoStream = pickVideo(adaptiveFormats);
-        const audioStream = pickAudio(adaptiveFormats);
+        const adaptive = toArr(d.adaptiveFormats);
+        const vs = pickVideo(adaptive);
+        const as = pickAudio(adaptive);
+        if (!vs) throw new Error('No video stream found.');
+        if (!as) throw new Error('No audio stream found.');
 
-        if (!videoStream) throw new Error('No video stream found.');
-        if (!audioStream) throw new Error('No audio stream found.');
+        const vq = vs.qualityLabel || `${vs.height}p`;
+        const ab = Math.round((as.averageBitrate||as.bitrate||0)/1000);
+        addLog(`✓ Video: ${vq} · ${vs.mimeType?.split(';')[0]}`, 'ok');
+        addLog(`✓ Audio: ${ab}kbps · ${as.mimeType?.split(';')[0]}`, 'ok');
+        addLog('Click below to fetch both streams and merge them.', 'info');
 
-        const videoQual = videoStream.qualityLabel || `${videoStream.height}p`;
-        const audioBitrate = Math.round((audioStream.averageBitrate || audioStream.bitrate || 0) / 1000);
-
-        addLog(`✓ Video: ${videoQual} · ${videoStream.mimeType?.split(';')[0]}`, 'ok');
-        addLog(`✓ Audio: ${audioBitrate}kbps · ${audioStream.mimeType?.split(';')[0]}`, 'ok');
-        addLog('Ready to merge. Click the button below to start.', 'info');
-
-        const safeTitle = (d.title || 'video').replace(/[^a-z0-9_\-\s]/gi, '').trim().replace(/\s+/g, '_');
-        pendingDownload = {
-          videoUrl: videoStream.url,
-          audioUrl: audioStream.url,
-          title: safeTitle || 'video',
-          videoExt: videoStream.mimeType?.includes('webm') ? 'webm' : 'mp4',
-          audioExt: audioStream.mimeType?.includes('webm') ? 'webm' : 'mp4',
+        const safeTitle = (d.title||'video').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_') || 'video';
+        pending = {
+          videoUrl: vs.url, audioUrl: as.url, title: safeTitle,
+          videoExt: vs.mimeType?.includes('webm') ? 'webm' : 'mp4',
+          audioExt: as.mimeType?.includes('webm') ? 'webm' : 'mp4',
         };
-
         dlBtnWrap.style.display = 'block';
 
-      } catch (e) {
-        sl.querySelector('.dot').className = 'dot d-err';
-        sl.querySelector('.log-text').textContent = `Error: ${e.message}`;
-        addLog('Make sure you subscribed to YTStream on RapidAPI (free plan).', 'info');
+      } catch(e) {
+        updateLog(sl, `Error: ${e.message}`, 'err');
       }
-
       goBtn.disabled = false;
     }
 
-    // ── FFmpeg merge & download ──────────────────────────────────────────────
-
-    async function loadFFmpeg() {
-      if (ffmpegReady) return ffmpegInstance;
-
-      const { FFmpeg } = FFmpegWASM;
-      const { fetchFile, toBlobURL } = FFmpegUtil;
-
-      progressWrap.style.display = 'block';
-      progLabel.textContent = 'Loading FFmpeg.wasm…';
-      progBar.style.width = '5%';
-      progSub.textContent = 'First run may take ~10s to download the WASM binary';
-
-      const ff = new FFmpeg();
-      ff.on('log', ({ message }) => {
-        // Show ffmpeg stderr briefly
-        if (message && message.length < 120) progSub.textContent = message;
-      });
-      ff.on('progress', ({ progress }) => {
-        const pct = Math.round(progress * 100);
-        progBar.style.width = `${60 + pct * 0.35}%`; // 60-95% range
-        progLabel.textContent = `Muxing… ${pct}%`;
-      });
-
-      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-      await ff.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-      });
-
-      ffmpegReady = true;
-      ffmpegInstance = ff;
-      progBar.style.width = '20%';
-      progLabel.textContent = 'FFmpeg ready';
-      return ff;
-    }
+    // ── Merge & download ──────────────────────────────────────────────────────
 
     async function runDownload() {
-      if (!pendingDownload) return;
-      dlBtn.disabled = true;
-      goBtn.disabled = true;
-
-      const { videoUrl, audioUrl, title, videoExt, audioExt } = pendingDownload;
-      const { fetchFile } = FFmpegUtil;
+      if (!pending) return;
+      dlBtn.disabled = true; goBtn.disabled = true;
+      const { videoUrl, audioUrl, title, videoExt, audioExt } = pending;
 
       try {
-        progressWrap.style.display = 'block';
+        // Step 1: load JS shims from jsDelivr
+        setProgress(3, 'Loading FFmpeg scripts…', 'Fetching from cdn.jsdelivr.net…');
+        await loadScript(FFMPEG_JS);
+        await loadScript(FFUTIL_JS);
+        setProgress(8, 'Scripts ready', '');
 
-        // Load FFmpeg
-        progLabel.textContent = 'Loading FFmpeg.wasm…';
-        progSub.textContent = 'First run downloads ~31MB WASM binary (cached after)';
-        progBar.style.width = '5%';
-        const ff = await loadFFmpeg();
+        const { FFmpeg }           = FFmpegWASM;
+        const { fetchFile, toBlobURL } = FFmpegUtil;
 
-        // Fetch video
-        progLabel.textContent = 'Downloading video stream…';
-        progSub.textContent = videoUrl.substring(0, 60) + '…';
-        progBar.style.width = '25%';
-        addLog('Downloading video stream…', 'spin');
+        // Step 2: init WASM (single-threaded core — no COOP/COEP needed)
+        if (!ffLoaded) {
+          setProgress(10, 'Initialising FFmpeg WASM…', 'Downloading single-threaded core (~10 MB, cached after)');
+          const ff = new FFmpeg();
+          ff.on('log', ({ message }) => { if (message?.length < 120) progSub.textContent = message; });
+          ff.on('progress', ({ progress }) => {
+            setProgress(65 + Math.round(progress * 28), `Muxing… ${Math.round(progress*100)}%`);
+          });
+          await ff.load({
+            coreURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`,   'text/javascript'),
+            wasmURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, 'application/wasm'),
+          });
+          ffInst = ff; ffLoaded = true;
+        }
+        const ff = ffInst;
+        setProgress(22, 'FFmpeg ready', '');
+
+        // Step 3: fetch video stream
+        const vl = addLog('Fetching 1080p video stream…', 'spin');
+        setProgress(25, 'Fetching video stream…', 'This may take a while for long videos');
         const videoData = await fetchFile(videoUrl);
-        progBar.style.width = '45%';
+        updateLog(vl, '✓ Video stream fetched', 'ok');
 
-        // Fetch audio
-        progLabel.textContent = 'Downloading audio stream…';
-        progBar.style.width = '50%';
-        addLog('Downloading audio stream…', 'spin');
+        // Step 4: fetch audio stream
+        const al = addLog('Fetching best audio stream…', 'spin');
+        setProgress(50, 'Fetching audio stream…', '');
         const audioData = await fetchFile(audioUrl);
-        progBar.style.width = '60%';
+        updateLog(al, '✓ Audio stream fetched', 'ok');
 
-        // Write to FFmpeg VFS
-        await ff.writeFile(`video.${videoExt}`, videoData);
-        await ff.writeFile(`audio.${audioExt}`, audioData);
+        // Step 5: write to VFS
+        setProgress(60, 'Writing to virtual filesystem…', '');
+        await ff.writeFile(`v.${videoExt}`, videoData);
+        await ff.writeFile(`a.${audioExt}`, audioData);
 
-        // Merge
-        progLabel.textContent = 'Merging streams…';
-        progBar.style.width = '65%';
-        addLog('Merging video + audio with FFmpeg.wasm…', 'spin');
-
+        // Step 6: mux
+        const ml = addLog('Muxing (stream copy — no re-encode)…', 'spin');
+        setProgress(65, 'Muxing…', '');
         await ff.exec([
-          '-i', `video.${videoExt}`,
-          '-i', `audio.${audioExt}`,
-          '-c', 'copy',        // stream copy, no re-encode — fast
+          '-i', `v.${videoExt}`,
+          '-i', `a.${audioExt}`,
+          '-c', 'copy',
+          '-movflags', '+faststart',
           '-shortest',
-          'output.mp4'
+          'out.mp4'
         ]);
+        updateLog(ml, '✓ Mux complete', 'ok');
 
-        progBar.style.width = '95%';
-        progLabel.textContent = 'Reading output…';
-
-        const outData = await ff.readFile('output.mp4');
-        const blob = new Blob([outData.buffer], { type: 'video/mp4' });
+        // Step 7: read output & trigger download
+        setProgress(95, 'Reading output…', '');
+        const out = await ff.readFile('out.mp4');
+        const blob = new Blob([out.buffer], { type: 'video/mp4' });
         const blobUrl = URL.createObjectURL(blob);
 
-        progBar.style.width = '100%';
-        progLabel.textContent = '✓ Done! Download starting…';
-        progSub.textContent = '';
-
-        // Trigger download
         const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = `${title}_1080p.mp4`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+        a.href = blobUrl; a.download = `${title}_1080p.mp4`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
 
-        addLog(`✓ Download started — ${title}_1080p.mp4`, 'ok');
+        setProgress(100, '✓ Download started!', `${title}_1080p.mp4`);
+        addLog(`✓ Saved as ${title}_1080p.mp4`, 'ok');
 
         // Cleanup VFS
-        try { await ff.deleteFile(`video.${videoExt}`); } catch {}
-        try { await ff.deleteFile(`audio.${audioExt}`); } catch {}
-        try { await ff.deleteFile('output.mp4'); } catch {}
+        for (const f of [`v.${videoExt}`, `a.${audioExt}`, 'out.mp4']) {
+          try { await ff.deleteFile(f); } catch {}
+        }
 
-      } catch (e) {
-        progLabel.textContent = 'Error during processing';
-        progBar.style.width = '0%';
-        progSub.textContent = e.message;
+      } catch(e) {
+        setProgress(0, 'Error during processing', e.message);
         addLog(`Error: ${e.message}`, 'err');
-        addLog('Note: some videos have CORS-restricted stream URLs that block direct browser fetch.', 'info');
+        if (/Worker|COOP|cross-origin/i.test(e.message)) {
+          addLog('This site needs Cross-Origin-Opener-Policy headers for FFmpeg.wasm. If you\'re on GitHub Pages, see: https://github.com/gzuidhof/coi-serviceworker for a workaround.', 'info');
+        } else if (/fetch|CORS|network/i.test(e.message)) {
+          addLog('Stream URL may have expired — press GO again to refresh.', 'info');
+        }
       }
 
-      dlBtn.disabled = false;
-      goBtn.disabled = false;
+      dlBtn.disabled = false; goBtn.disabled = false;
     }
 
     dlBtn.addEventListener('click', runDownload);
-
-    document.getElementById('url').addEventListener('keydown', e => {
-      if (e.key === 'Enter') go();
-    });
+    document.getElementById('url').addEventListener('keydown', e => { if (e.key==='Enter') go(); });
   </script>
 </body>
 </html>
