@@ -56,7 +56,6 @@
     .notice { background:#161200; border:1px solid #302800; border-radius:var(--r); padding:.65rem .9rem; margin-bottom:1.25rem; font-size:.67rem; color:#776600; line-height:1.6; }
     .notice strong { color:var(--accent); }
 
-    /* Status log */
     #log { display:none; margin-top:1.25rem; border-top:1px solid var(--border); padding-top:1rem; }
     .log-line { display:flex; gap:.5rem; align-items:flex-start; margin-bottom:.3rem; font-size:.72rem; animation:li .2s ease both; }
     @keyframes li { from{opacity:0;transform:translateX(-4px)} to{opacity:1;transform:none} }
@@ -69,26 +68,23 @@
     .log-text { line-height:1.5; color:var(--muted); }
     .log-text.hi { color:var(--text); }
 
-    /* Video info */
     #vinfo { display:none; margin-top:1rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--r); padding:.9rem; flex-direction:row; gap:.9rem; align-items:center; }
     #vinfo img { width:100px; height:56px; object-fit:cover; border-radius:2px; flex-shrink:0; background:#1a1a1a; }
     .vi-title { font-family:'Syne',sans-serif; font-size:.85rem; font-weight:700; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
     .vi-sub { font-size:.63rem; color:var(--muted); margin-top:.25rem; }
 
-    /* Format list */
-    #fmts { display:none; margin-top:1.25rem; border-top:1px solid var(--border); padding-top:1rem; }
-    .fmts-lbl { font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:.6rem; }
+    /* Progress bar */
+    #progress-wrap { display:none; margin-top:1rem; }
+    .prog-label { font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.4rem; }
+    .prog-bar-bg { background:var(--bg); border:1px solid var(--border); border-radius:2px; height:6px; overflow:hidden; }
+    .prog-bar-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .3s ease; width:0%; }
+    .prog-sub { font-size:.62rem; color:var(--muted); margin-top:.3rem; }
 
-    .fmt-group-title { font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:#444; margin:.75rem 0 .4rem; }
-    .fmt-group-title:first-child { margin-top:0; }
-
-    .fmt { display:flex; align-items:center; justify-content:space-between; gap:.6rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--r); padding:.55rem .9rem; text-decoration:none; color:var(--text); transition:border-color .15s,background .15s; cursor:pointer; margin-bottom:.3rem; }
-    .fmt:hover { border-color:var(--accent); background:#141400; }
-    .fmt-left { display:flex; align-items:center; gap:.6rem; }
-    .fmt-badge { font-size:.63rem; font-family:'Syne',sans-serif; font-weight:800; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:2px; padding:.12rem .35rem; color:var(--accent); min-width:44px; text-align:center; white-space:nowrap; }
-    .fmt-codec { font-size:.68rem; color:var(--muted); }
-    .fmt-size { font-size:.63rem; color:#444; }
-    .fmt-arrow { font-size:.8rem; color:var(--accent); font-family:'Syne',sans-serif; font-weight:800; }
+    /* Download button */
+    #dl-btn-wrap { display:none; margin-top:1.25rem; }
+    .dl-btn { display:flex; align-items:center; justify-content:center; gap:.6rem; width:100%; background:var(--accent); border:none; border-radius:var(--r); color:#000; cursor:pointer; font-family:'Syne',sans-serif; font-size:1rem; font-weight:800; letter-spacing:.04em; padding:.9rem 1.4rem; transition:transform .1s,box-shadow .1s; }
+    .dl-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(232,255,71,.4); }
+    .dl-btn:active { transform:none; }
 
     footer { margin-top:2rem; font-size:.62rem; color:var(--muted); text-align:center; line-height:1.9; }
     footer a { color:#3a3a3a; text-decoration:none; }
@@ -104,12 +100,13 @@
   <div class="container">
     <header>
       <div class="logo">yt<span>-</span>grab</div>
-      <div class="tagline">YouTube video downloader · powered by YTStream</div>
+      <div class="tagline">1080p + best audio · auto-merged · powered by YTStream</div>
     </header>
 
     <div class="card">
       <div class="notice">
-        <strong>⚠</strong> Only download content you have rights to — Creative Commons, public domain, or your own videos.
+        <strong>⚠</strong> Only download content you have rights to — Creative Commons, public domain, or your own videos.<br/>
+        <strong>ℹ</strong> Merging is done <strong>entirely in your browser</strong> using FFmpeg.wasm. No files leave your device.
       </div>
 
       <div class="lbl">YouTube URL</div>
@@ -119,6 +116,7 @@
       </div>
 
       <div id="log"></div>
+
       <div id="vinfo">
         <img id="vthumb" src="" alt="" />
         <div>
@@ -126,33 +124,52 @@
           <div class="vi-sub" id="vsub"></div>
         </div>
       </div>
-      <div id="fmts">
-        <div class="fmts-lbl">Pick a format to download</div>
-        <div id="fmts-list"></div>
+
+      <div id="progress-wrap">
+        <div class="prog-label" id="prog-label">Loading FFmpeg…</div>
+        <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-bar"></div></div>
+        <div class="prog-sub" id="prog-sub"></div>
+      </div>
+
+      <div id="dl-btn-wrap">
+        <button class="dl-btn" id="dl-btn">↓ Download 1080p + Best Audio (merged)</button>
       </div>
     </div>
 
     <footer>
       powered by <a href="https://rapidapi.com/ytjar/api/ytstream-download-youtube-videos" target="_blank">YTStream</a> via RapidAPI ·
-      no tracking · no storage<br/>
+      merged with <a href="https://ffmpegwasm.netlify.app/" target="_blank">FFmpeg.wasm</a> ·
+      no tracking · no server<br/>
       only download content you have rights to
     </footer>
   </div>
+
+  <!-- FFmpeg.wasm via CDN -->
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
+  <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
 
   <script>
     const KEY  = '84ff588c9bmsh25a213355c21977p1c6997jsnf9a1fe621e32';
     const HOST = 'ytstream-download-youtube-videos.p.rapidapi.com';
 
-    const logEl   = document.getElementById('log');
-    const vinfoEl = document.getElementById('vinfo');
-    const fmtsEl  = document.getElementById('fmts');
-    const fmtList = document.getElementById('fmts-list');
-    const goBtn   = document.getElementById('go');
+    const logEl        = document.getElementById('log');
+    const vinfoEl      = document.getElementById('vinfo');
+    const progressWrap = document.getElementById('progress-wrap');
+    const progBar      = document.getElementById('prog-bar');
+    const progLabel    = document.getElementById('prog-label');
+    const progSub      = document.getElementById('prog-sub');
+    const dlBtnWrap    = document.getElementById('dl-btn-wrap');
+    const dlBtn        = document.getElementById('dl-btn');
+    const goBtn        = document.getElementById('go');
 
-    function addLog(msg, type='info') {
+    let ffmpegReady = false;
+    let ffmpegInstance = null;
+    let pendingDownload = null; // { videoUrl, audioUrl, title }
+
+    function addLog(msg, type = 'info') {
       logEl.style.display = 'block';
-      const dc = {spin:'d-spin',ok:'d-ok',err:'d-err',info:'d-info'}[type]||'d-info';
-      const hi = (type==='spin'||type==='ok') ? 'hi' : '';
+      const dc = { spin:'d-spin', ok:'d-ok', err:'d-err', info:'d-info' }[type] || 'd-info';
+      const hi = (type === 'spin' || type === 'ok') ? 'hi' : '';
       const el = document.createElement('div');
       el.className = 'log-line';
       el.innerHTML = `<div class="dot ${dc}"></div><div class="log-text ${hi}">${msg}</div>`;
@@ -161,10 +178,13 @@
     }
 
     function reset() {
-      logEl.innerHTML=''; logEl.style.display='none';
-      vinfoEl.style.display='none';
-      fmtsEl.style.display='none';
-      fmtList.innerHTML='';
+      logEl.innerHTML = ''; logEl.style.display = 'none';
+      vinfoEl.style.display = 'none';
+      progressWrap.style.display = 'none';
+      dlBtnWrap.style.display = 'none';
+      pendingDownload = null;
+      progBar.style.width = '0%';
+      progSub.textContent = '';
     }
 
     function extractId(url) {
@@ -180,23 +200,39 @@
 
     function fmtTime(s) {
       if (!s) return '';
-      const m = Math.floor(s/60), sec = s%60;
-      return `${m}:${String(sec).padStart(2,'0')}`;
+      const m = Math.floor(s / 60), sec = s % 60;
+      return `${m}:${String(sec).padStart(2, '0')}`;
     }
 
-    function codecLabel(mimeType='') {
-      if (mimeType.includes('avc1') || mimeType.includes('avc')) return 'H.264';
-      if (mimeType.includes('vp9'))  return 'VP9';
-      if (mimeType.includes('av01') || mimeType.includes('av1')) return 'AV1';
-      if (mimeType.includes('mp4a')) return 'AAC';
-      if (mimeType.includes('opus')) return 'Opus';
-      return mimeType.split(';')[0].split('/')[1] || '?';
+    function toArr(obj) {
+      return obj ? (Array.isArray(obj) ? obj : Object.values(obj)) : [];
     }
 
-    function containerLabel(mimeType='') {
-      if (mimeType.includes('webm')) return 'webm';
-      if (mimeType.includes('mp4'))  return 'mp4';
-      return '';
+    // Pick best video stream at or near 1080p
+    function pickVideo(adaptiveFormats) {
+      const videos = adaptiveFormats
+        .filter(f => f.url && f.mimeType?.includes('video'))
+        .sort((a, b) => (parseInt(b.height)||0) - (parseInt(a.height)||0));
+
+      // Prefer 1080p mp4 (H.264) for max compatibility
+      const p1080mp4 = videos.find(f => parseInt(f.height) === 1080 && f.mimeType?.includes('mp4'));
+      if (p1080mp4) return p1080mp4;
+      // Any 1080p
+      const p1080 = videos.find(f => parseInt(f.height) === 1080);
+      if (p1080) return p1080;
+      // Best available
+      return videos[0] || null;
+    }
+
+    // Pick best audio stream (highest bitrate, prefer mp4/aac for compat)
+    function pickAudio(adaptiveFormats) {
+      const audios = adaptiveFormats
+        .filter(f => f.url && f.mimeType?.includes('audio'))
+        .sort((a, b) => (parseInt(b.averageBitrate||b.bitrate)||0) - (parseInt(a.averageBitrate||a.bitrate)||0));
+
+      const aacAudio = audios.find(f => f.mimeType?.includes('mp4a'));
+      if (aacAudio) return aacAudio;
+      return audios[0] || null;
     }
 
     async function go() {
@@ -223,7 +259,7 @@
         if (d.status && d.status !== 'OK') throw new Error(`API returned: ${d.status}`);
 
         sl.querySelector('.dot').className = 'dot d-ok';
-        sl.querySelector('.log-text').textContent = `Got ${d.title || 'video'} — parsing formats…`;
+        sl.querySelector('.log-text').textContent = `Got "${d.title || 'video'}" — selecting best streams…`;
         sl.querySelector('.log-text').classList.add('hi');
 
         // Show video info
@@ -231,91 +267,41 @@
           document.getElementById('vtitle').textContent = d.title;
           document.getElementById('vsub').textContent =
             [d.channelTitle, fmtTime(parseInt(d.lengthSeconds))].filter(Boolean).join(' · ');
-          // Best thumbnail
           const thumbs = d.thumbnail;
           const thumbUrl = Array.isArray(thumbs)
-            ? thumbs[thumbs.length-1]?.url
-            : (thumbs?.[Object.keys(thumbs).sort((a,b)=>b-a)[0]]?.url
+            ? thumbs[thumbs.length - 1]?.url
+            : (thumbs?.[Object.keys(thumbs).sort((a, b) => b - a)[0]]?.url
                || `https://img.youtube.com/vi/${id}/hqdefault.jpg`);
           document.getElementById('vthumb').src = thumbUrl || `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
           vinfoEl.style.display = 'flex';
         }
 
-        // The API returns formats and adaptiveFormats as objects keyed by index
-        // Convert to arrays
-        const toArr = obj => obj ? (Array.isArray(obj) ? obj : Object.values(obj)) : [];
-        const formats         = toArr(d.formats);
         const adaptiveFormats = toArr(d.adaptiveFormats);
+        const videoStream = pickVideo(adaptiveFormats);
+        const audioStream = pickAudio(adaptiveFormats);
 
-        // Video formats: those with both video + audio (formats array, itag 18 etc)
-        // Adaptive: video-only or audio-only streams
-        const combined = formats.filter(f => f.url && f.mimeType?.includes('video'));
-        const videoOnly = adaptiveFormats.filter(f => f.url && f.mimeType?.includes('video'));
-        const audioOnly = adaptiveFormats.filter(f => f.url && f.mimeType?.includes('audio'));
+        if (!videoStream) throw new Error('No video stream found.');
+        if (!audioStream) throw new Error('No audio stream found.');
 
-        // Sort by height descending
-        const byHeight = arr => [...arr].sort((a,b) => (parseInt(b.height)||0)-(parseInt(a.height)||0));
-        const byBitrate = arr => [...arr].sort((a,b) => (parseInt(b.averageBitrate||b.bitrate)||0)-(parseInt(a.averageBitrate||a.bitrate)||0));
+        const videoQual = videoStream.qualityLabel || `${videoStream.height}p`;
+        const audioBitrate = Math.round((audioStream.averageBitrate || audioStream.bitrate || 0) / 1000);
 
-        // Deduplicate by qualityLabel + codec
-        function dedup(arr) {
-          const seen = new Set();
-          return arr.filter(f => {
-            const key = `${f.qualityLabel}-${codecLabel(f.mimeType)}`;
-            if (seen.has(key)) return false;
-            seen.add(key); return true;
-          });
-        }
+        addLog(`✓ Video: ${videoQual} · ${videoStream.mimeType?.split(';')[0]}`, 'ok');
+        addLog(`✓ Audio: ${audioBitrate}kbps · ${audioStream.mimeType?.split(';')[0]}`, 'ok');
+        addLog('Ready to merge. Click the button below to start.', 'info');
 
-        const rows = [
-          { group: '📹 Video + Audio (ready to download)', items: dedup(byHeight(combined)) },
-          { group: '🎞 Video only (no audio)', items: dedup(byHeight(videoOnly)) },
-          { group: '🎵 Audio only', items: dedup(byBitrate(audioOnly)) },
-        ].filter(g => g.items.length > 0);
+        const safeTitle = (d.title || 'video').replace(/[^a-z0-9_\-\s]/gi, '').trim().replace(/\s+/g, '_');
+        pendingDownload = {
+          videoUrl: videoStream.url,
+          audioUrl: audioStream.url,
+          title: safeTitle || 'video',
+          videoExt: videoStream.mimeType?.includes('webm') ? 'webm' : 'mp4',
+          audioExt: audioStream.mimeType?.includes('webm') ? 'webm' : 'mp4',
+        };
 
-        if (!rows.length) throw new Error('No downloadable formats found.');
+        dlBtnWrap.style.display = 'block';
 
-        rows.forEach(({ group, items }) => {
-          const gt = document.createElement('div');
-          gt.className = 'fmt-group-title';
-          gt.textContent = group;
-          fmtList.appendChild(gt);
-
-          items.forEach(f => {
-            const isAudio = f.mimeType?.includes('audio') && !f.mimeType?.includes('video');
-            const qual = isAudio
-              ? `${Math.round((f.averageBitrate||f.bitrate||0)/1000)}kbps`
-              : (f.qualityLabel || `${f.height}p`);
-            const codec = codecLabel(f.mimeType);
-            const container = containerLabel(f.mimeType);
-            const size = humanSize(f.contentLength);
-            const ext = container || (isAudio ? 'mp3' : 'mp4');
-            const filename = isAudio ? `audio_${qual}.${ext}` : `${d.title||'video'}_${qual}.${ext}`;
-
-            const a = document.createElement('a');
-            a.className = 'fmt';
-            a.href = f.url;
-            a.target = '_blank';
-            a.rel = 'noopener';
-            a.download = filename;
-            a.innerHTML = `
-              <div class="fmt-left">
-                <span class="fmt-badge">${qual}</span>
-                <span class="fmt-codec">${codec} · ${ext.toUpperCase()}</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:.6rem">
-                ${size ? `<span class="fmt-size">${size}</span>` : ''}
-                <span class="fmt-arrow">↓</span>
-              </div>
-            `;
-            fmtList.appendChild(a);
-          });
-        });
-
-        fmtsEl.style.display = 'block';
-        addLog(`✓ Found formats — click one to download!`, 'ok');
-
-      } catch(e) {
+      } catch (e) {
         sl.querySelector('.dot').className = 'dot d-err';
         sl.querySelector('.log-text').textContent = `Error: ${e.message}`;
         addLog('Make sure you subscribed to YTStream on RapidAPI (free plan).', 'info');
@@ -323,6 +309,133 @@
 
       goBtn.disabled = false;
     }
+
+    // ── FFmpeg merge & download ──────────────────────────────────────────────
+
+    async function loadFFmpeg() {
+      if (ffmpegReady) return ffmpegInstance;
+
+      const { FFmpeg } = FFmpegWASM;
+      const { fetchFile, toBlobURL } = FFmpegUtil;
+
+      progressWrap.style.display = 'block';
+      progLabel.textContent = 'Loading FFmpeg.wasm…';
+      progBar.style.width = '5%';
+      progSub.textContent = 'First run may take ~10s to download the WASM binary';
+
+      const ff = new FFmpeg();
+      ff.on('log', ({ message }) => {
+        // Show ffmpeg stderr briefly
+        if (message && message.length < 120) progSub.textContent = message;
+      });
+      ff.on('progress', ({ progress }) => {
+        const pct = Math.round(progress * 100);
+        progBar.style.width = `${60 + pct * 0.35}%`; // 60-95% range
+        progLabel.textContent = `Muxing… ${pct}%`;
+      });
+
+      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+      await ff.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      });
+
+      ffmpegReady = true;
+      ffmpegInstance = ff;
+      progBar.style.width = '20%';
+      progLabel.textContent = 'FFmpeg ready';
+      return ff;
+    }
+
+    async function runDownload() {
+      if (!pendingDownload) return;
+      dlBtn.disabled = true;
+      goBtn.disabled = true;
+
+      const { videoUrl, audioUrl, title, videoExt, audioExt } = pendingDownload;
+      const { fetchFile } = FFmpegUtil;
+
+      try {
+        progressWrap.style.display = 'block';
+
+        // Load FFmpeg
+        progLabel.textContent = 'Loading FFmpeg.wasm…';
+        progSub.textContent = 'First run downloads ~31MB WASM binary (cached after)';
+        progBar.style.width = '5%';
+        const ff = await loadFFmpeg();
+
+        // Fetch video
+        progLabel.textContent = 'Downloading video stream…';
+        progSub.textContent = videoUrl.substring(0, 60) + '…';
+        progBar.style.width = '25%';
+        addLog('Downloading video stream…', 'spin');
+        const videoData = await fetchFile(videoUrl);
+        progBar.style.width = '45%';
+
+        // Fetch audio
+        progLabel.textContent = 'Downloading audio stream…';
+        progBar.style.width = '50%';
+        addLog('Downloading audio stream…', 'spin');
+        const audioData = await fetchFile(audioUrl);
+        progBar.style.width = '60%';
+
+        // Write to FFmpeg VFS
+        await ff.writeFile(`video.${videoExt}`, videoData);
+        await ff.writeFile(`audio.${audioExt}`, audioData);
+
+        // Merge
+        progLabel.textContent = 'Merging streams…';
+        progBar.style.width = '65%';
+        addLog('Merging video + audio with FFmpeg.wasm…', 'spin');
+
+        await ff.exec([
+          '-i', `video.${videoExt}`,
+          '-i', `audio.${audioExt}`,
+          '-c', 'copy',        // stream copy, no re-encode — fast
+          '-shortest',
+          'output.mp4'
+        ]);
+
+        progBar.style.width = '95%';
+        progLabel.textContent = 'Reading output…';
+
+        const outData = await ff.readFile('output.mp4');
+        const blob = new Blob([outData.buffer], { type: 'video/mp4' });
+        const blobUrl = URL.createObjectURL(blob);
+
+        progBar.style.width = '100%';
+        progLabel.textContent = '✓ Done! Download starting…';
+        progSub.textContent = '';
+
+        // Trigger download
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `${title}_1080p.mp4`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
+        addLog(`✓ Download started — ${title}_1080p.mp4`, 'ok');
+
+        // Cleanup VFS
+        try { await ff.deleteFile(`video.${videoExt}`); } catch {}
+        try { await ff.deleteFile(`audio.${audioExt}`); } catch {}
+        try { await ff.deleteFile('output.mp4'); } catch {}
+
+      } catch (e) {
+        progLabel.textContent = 'Error during processing';
+        progBar.style.width = '0%';
+        progSub.textContent = e.message;
+        addLog(`Error: ${e.message}`, 'err');
+        addLog('Note: some videos have CORS-restricted stream URLs that block direct browser fetch.', 'info');
+      }
+
+      dlBtn.disabled = false;
+      goBtn.disabled = false;
+    }
+
+    dlBtn.addEventListener('click', runDownload);
 
     document.getElementById('url').addEventListener('keydown', e => {
       if (e.key === 'Enter') go();
