@@ -30,47 +30,77 @@
     .corner-tr { top:20px; right:20px; border-width:2px 2px 0 0; }
     .corner-bl { bottom:20px; left:20px; border-width:0 0 2px 2px; }
     .corner-br { bottom:20px; right:20px; border-width:0 2px 2px 0; }
-    .container { width: 100%; max-width: 640px; animation: fadeUp 0.6s ease both; }
+
+    .container { width: 100%; max-width: 660px; animation: fadeUp 0.6s ease both; }
     @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
     header { margin-bottom: 3rem; }
     .logo { font-family:'Syne',sans-serif; font-size:clamp(3rem,10vw,5rem); font-weight:800; line-height:0.9; letter-spacing:-0.03em; color:var(--accent); text-shadow:4px 4px 0 #2a3000; }
     .logo span { color: var(--text); }
     .tagline { margin-top:.75rem; color:var(--muted); font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; }
+
     .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:2rem; position:relative; }
     .card::before { content:''; position:absolute; top:-1px; left:-1px; right:-1px; height:2px; background:linear-gradient(90deg,var(--accent),transparent); border-radius:var(--radius) var(--radius) 0 0; }
+
     .label { font-size:.65rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:.5rem; }
+
     .input-row { display:flex; gap:.75rem; margin-bottom:1.5rem; }
     input[type="text"] { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-family:'Space Mono',monospace; font-size:.82rem; padding:.75rem 1rem; outline:none; transition:border-color .2s; }
     input[type="text"]:focus { border-color:var(--accent); }
     input[type="text"]::placeholder { color:#333; }
+
     .btn { background:var(--accent); border:none; border-radius:var(--radius); color:#000; cursor:pointer; font-family:'Syne',sans-serif; font-size:.85rem; font-weight:700; letter-spacing:.05em; padding:.75rem 1.5rem; transition:transform .1s,box-shadow .1s; white-space:nowrap; }
     .btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(232,255,71,.25); }
     .btn:active { transform:translateY(0); }
     .btn:disabled { opacity:.4; cursor:not-allowed; transform:none; box-shadow:none; }
-    .options-row { display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; }
-    .option-group { flex:1; min-width:140px; }
-    select { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-family:'Space Mono',monospace; font-size:.78rem; padding:.6rem .75rem; outline:none; appearance:none; cursor:pointer; transition:border-color .2s; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .75rem center; }
-    select:focus { border-color:var(--accent); }
-    #status { display:none; margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.5rem; max-height:240px; overflow-y:auto; }
-    .status-line { display:flex; align-items:flex-start; gap:.6rem; margin-bottom:.4rem; font-size:.75rem; animation:fadeIn .3s ease both; }
-    @keyframes fadeIn { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
+
+    .notice { background:#1a1500; border:1px solid #3a3200; border-radius:var(--radius); padding:.75rem 1rem; margin-bottom:1.5rem; font-size:.7rem; color:#887700; line-height:1.6; }
+    .notice strong { color:var(--accent); }
+
+    /* Status */
+    #status { display:none; margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.25rem; }
+    .status-line { display:flex; align-items:flex-start; gap:.6rem; margin-bottom:.35rem; font-size:.75rem; animation:fadeIn .25s ease both; }
+    @keyframes fadeIn { from{opacity:0;transform:translateX(-5px)} to{opacity:1;transform:translateX(0)} }
     .status-dot { width:6px; height:6px; border-radius:50%; margin-top:.35rem; flex-shrink:0; }
     .dot-spin { background:var(--accent); animation:pulse 1s ease-in-out infinite; }
     .dot-ok { background:#4ade80; }
     .dot-err { background:var(--accent2); }
     .dot-info { background:#60a5fa; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-    .status-text { color:var(--text); line-height:1.5; }
-    .status-text.muted { color:var(--muted); }
-    #download-btn-wrap { display:none; margin-top:1.25rem; }
-    .dl-btn { display:inline-flex; align-items:center; gap:.5rem; background:transparent; border:1px solid var(--accent); border-radius:var(--radius); color:var(--accent); cursor:pointer; font-family:'Syne',sans-serif; font-size:.85rem; font-weight:700; letter-spacing:.05em; padding:.75rem 1.25rem; text-decoration:none; transition:background .2s,color .2s; }
-    .dl-btn:hover { background:var(--accent); color:#000; }
-    footer { margin-top:2.5rem; font-size:.65rem; color:var(--muted); text-align:center; line-height:1.8; letter-spacing:.05em; }
+    .status-text { color:var(--muted); line-height:1.5; }
+    .status-text.bright { color:var(--text); }
+
+    /* Video info card */
+    #video-info {
+      display:none; margin-top:1.25rem;
+      background:var(--bg); border:1px solid var(--border);
+      border-radius:var(--radius); padding:1rem;
+      flex-direction:row; gap:1rem; align-items:center;
+    }
+    #video-info img { width:110px; height:62px; object-fit:cover; border-radius:2px; flex-shrink:0; background:#222; }
+    .vi-title { font-family:'Syne',sans-serif; font-size:.88rem; font-weight:700; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+    .vi-meta { font-size:.65rem; color:var(--muted); margin-top:.35rem; }
+
+    /* Format list */
+    #formats-section { display:none; margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.25rem; }
+    .formats-label { font-size:.65rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:.75rem; }
+    .format-list { display:flex; flex-direction:column; gap:.4rem; }
+    .fmt-row {
+      display:flex; align-items:center; justify-content:space-between; gap:.75rem;
+      background:var(--bg); border:1px solid var(--border); border-radius:var(--radius);
+      padding:.6rem 1rem; text-decoration:none; color:var(--text);
+      transition:border-color .15s, background .15s; cursor:pointer;
+    }
+    .fmt-row:hover { border-color:var(--accent); background:#141400; }
+    .fmt-left { display:flex; align-items:center; gap:.75rem; }
+    .fmt-badge { font-size:.65rem; font-family:'Syne',sans-serif; font-weight:700; background:#1e1e1e; border:1px solid #333; border-radius:2px; padding:.15rem .4rem; color:var(--accent); min-width:48px; text-align:center; }
+    .fmt-type { font-size:.72rem; color:var(--muted); }
+    .fmt-size { font-size:.68rem; color:#555; }
+    .fmt-dl { font-size:.75rem; color:var(--accent); font-family:'Syne',sans-serif; font-weight:700; }
+
+    footer { margin-top:2.5rem; font-size:.65rem; color:var(--muted); text-align:center; line-height:1.8; }
     footer a { color:#444; text-decoration:none; }
     footer a:hover { color:var(--accent); }
-    .notice { background:#1a1500; border:1px solid #3a3200; border-radius:var(--radius); padding:.75rem 1rem; margin-bottom:1.5rem; font-size:.7rem; color:#887700; line-height:1.6; }
-    .notice strong { color:var(--accent); }
-    .notice a { color:#887700; text-decoration:underline; }
   </style>
 </head>
 <body>
@@ -82,12 +112,12 @@
   <div class="container">
     <header>
       <div class="logo">yt<span>-</span>grab</div>
-      <div class="tagline">YouTube video downloader · powered by cobalt</div>
+      <div class="tagline">YouTube video downloader · powered by YTStream</div>
     </header>
 
     <div class="card">
       <div class="notice">
-        <strong>⚠ Note:</strong> Only download content you have the right to download — Creative Commons, public domain, or your own videos. Powered by community <a href="https://instances.cobalt.best" target="_blank">cobalt instances</a>.
+        <strong>⚠ Note:</strong> Only download content you have the right to — Creative Commons, public domain, or your own videos.
       </div>
 
       <div class="label">YouTube URL</div>
@@ -96,160 +126,181 @@
         <button class="btn" id="go-btn" onclick="startDownload()">GO</button>
       </div>
 
-      <div class="options-row">
-        <div class="option-group">
-          <div class="label">Quality</div>
-          <select id="quality">
-            <option value="1080">1080p</option>
-            <option value="720">720p</option>
-            <option value="480">480p</option>
-            <option value="360">360p</option>
-          </select>
-        </div>
-        <div class="option-group">
-          <div class="label">Codec</div>
-          <select id="codec">
-            <option value="h264">H.264 (MP4)</option>
-            <option value="vp9">VP9 (WebM)</option>
-            <option value="av1">AV1</option>
-          </select>
-        </div>
-        <div class="option-group">
-          <div class="label">Type</div>
-          <select id="type">
-            <option value="auto">Video + Audio</option>
-            <option value="audio">Audio only</option>
-          </select>
+      <div id="status"></div>
+      <div id="video-info">
+        <img id="vi-thumb" src="" alt="thumbnail" />
+        <div>
+          <div class="vi-title" id="vi-title"></div>
+          <div class="vi-meta" id="vi-meta"></div>
         </div>
       </div>
-
-      <div id="status"></div>
-      <div id="download-btn-wrap"></div>
+      <div id="formats-section">
+        <div class="formats-label">Choose a format to download</div>
+        <div class="format-list" id="format-list"></div>
+      </div>
     </div>
 
     <footer>
-      uses <a href="https://cobalt.tools" target="_blank">cobalt</a> open-source instances ·
-      no data stored · no tracking<br />
+      powered by <a href="https://rapidapi.com/ytjar/api/ytstream-download-youtube-videos" target="_blank">YTStream</a> via RapidAPI ·
+      no data stored · no tracking<br/>
       only download content you have rights to
     </footer>
   </div>
 
   <script>
-    // Free CORS proxy — no signup needed
-    const CORS = 'https://corsproxy.io/?url=';
+    const API_KEY  = '84ff588c9bmsh25a213355c21977p1c6997jsnf9a1fe621e32';
+    const API_HOST = 'ytstream-download-youtube-videos.p.rapidapi.com';
+    const API_URL  = `https://${API_HOST}/dl`;
 
-    // Known cobalt instances (CORS-enabled, no auth required)
-    const INSTANCES = [
-      'https://cobalt.api.timelessnesses.me',
-      'https://cobalt.synzr.space',
-      'https://co.tskau.team',
-      'https://cobalt-api.hyper.lol',
-      'https://cobalt.tools',
-    ];
-
-    const statusEl = document.getElementById('status');
-    const dlWrap   = document.getElementById('download-btn-wrap');
-    const goBtn    = document.getElementById('go-btn');
+    const statusEl   = document.getElementById('status');
+    const goBtn      = document.getElementById('go-btn');
+    const videoInfo  = document.getElementById('video-info');
+    const fmtSection = document.getElementById('formats-section');
+    const fmtList    = document.getElementById('format-list');
 
     function log(msg, type = 'info') {
       statusEl.style.display = 'block';
-      const dotClass = {info:'dot-info', ok:'dot-ok', err:'dot-err', spin:'dot-spin'}[type] || 'dot-info';
-      const line = document.createElement('div');
-      line.className = 'status-line';
-      line.innerHTML = `<div class="status-dot ${dotClass}"></div><div class="status-text ${type==='spin'?'':'muted'}">${msg}</div>`;
-      statusEl.appendChild(line);
-      statusEl.scrollTop = statusEl.scrollHeight;
-      return line;
+      const dc = {info:'dot-info', ok:'dot-ok', err:'dot-err', spin:'dot-spin'}[type] || 'dot-info';
+      const bright = (type === 'spin' || type === 'ok') ? 'bright' : '';
+      const el = document.createElement('div');
+      el.className = 'status-line';
+      el.innerHTML = `<div class="status-dot ${dc}"></div><div class="status-text ${bright}">${msg}</div>`;
+      statusEl.appendChild(el);
+      return el;
     }
 
-    function clearStatus() {
+    function clearAll() {
       statusEl.innerHTML = ''; statusEl.style.display = 'none';
-      dlWrap.innerHTML = ''; dlWrap.style.display = 'none';
+      videoInfo.style.display = 'none';
+      fmtSection.style.display = 'none';
+      fmtList.innerHTML = '';
     }
 
-    async function callCobalt(apiUrl, ytUrl, quality, codec, downloadMode) {
-      const body = JSON.stringify({
-        url: ytUrl,
-        videoQuality: String(quality),
-        youtubeVideoCodec: codec,
-        downloadMode,
-        filenameStyle: 'pretty',
-      });
-      const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-
-      // Try direct, then through CORS proxy
-      for (const endpoint of [apiUrl, CORS + encodeURIComponent(apiUrl)]) {
-        try {
-          const ctrl = new AbortController();
-          const t = setTimeout(() => ctrl.abort(), 12000);
-          const res = await fetch(endpoint, { method:'POST', headers, body, signal:ctrl.signal });
-          clearTimeout(t);
-          if (!res.ok) continue;
-          const data = await res.json();
-          if (data.status === 'error') throw new Error(data.error?.code || 'api error');
-          const url = data.url || data.picker?.[0]?.url;
-          if (url) return url;
-        } catch (e) {
-          if (e.message.includes('api error')) throw e;
-          // network error → try next endpoint
-        }
+    function extractVideoId(url) {
+      const patterns = [
+        /(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([A-Za-z0-9_-]{11})/,
+      ];
+      for (const p of patterns) {
+        const m = url.match(p);
+        if (m) return m[1];
       }
-      throw new Error('unreachable');
+      return null;
+    }
+
+    function fmtSeconds(s) {
+      if (!s) return '';
+      const m = Math.floor(s / 60), sec = s % 60;
+      return `${m}:${String(sec).padStart(2,'0')}`;
     }
 
     async function startDownload() {
-      const ytUrl = document.getElementById('url-input').value.trim();
-      if (!ytUrl) { document.getElementById('url-input').focus(); return; }
-      if (!ytUrl.match(/youtube\.com|youtu\.be/i)) {
-        clearStatus(); log('Please enter a valid YouTube URL.', 'err'); return;
-      }
+      const rawUrl = document.getElementById('url-input').value.trim();
+      if (!rawUrl) { document.getElementById('url-input').focus(); return; }
 
-      clearStatus();
-      goBtn.disabled = true;
-
-      const quality      = document.getElementById('quality').value;
-      const codec        = document.getElementById('codec').value;
-      const downloadMode = document.getElementById('type').value;
-
-      let resultUrl = null;
-
-      for (const inst of INSTANCES) {
-        const short = inst.replace(/^https?:\/\//, '');
-        const sl = log(`Trying ${short}...`, 'spin');
-        try {
-          resultUrl = await callCobalt(inst + '/', ytUrl, quality, codec, downloadMode);
-          sl.querySelector('.status-dot').className = 'status-dot dot-ok';
-          sl.querySelector('.status-text').textContent = `${short} → ✓`;
-          break;
-        } catch (e) {
-          sl.querySelector('.status-dot').className = 'status-dot dot-err';
-          sl.querySelector('.status-text').textContent = `${short} → ${e.message}`;
-        }
-      }
-
-      goBtn.disabled = false;
-
-      if (!resultUrl) {
-        log('❌ All instances failed. The video may be age-restricted or unavailable.', 'err');
-        log('💡 Try a different video, or try again in a few minutes.', 'info');
+      const videoId = extractVideoId(rawUrl);
+      if (!videoId) {
+        clearAll();
+        log('Could not find a YouTube video ID in that URL.', 'err');
         return;
       }
 
-      log('✓ Download link ready!', 'ok');
-      dlWrap.style.display = 'block';
+      clearAll();
+      goBtn.disabled = true;
+      const sl = log('Fetching video info…', 'spin');
 
-      const ext = downloadMode === 'audio' ? 'mp3' : (codec === 'vp9' ? 'webm' : 'mp4');
-      const label = downloadMode === 'audio' ? 'Audio' : `${quality}p Video`;
-      const filename = downloadMode === 'audio' ? `audio.${ext}` : `video_${quality}p.${ext}`;
+      try {
+        const res = await fetch(`${API_URL}?id=${videoId}`, {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-key': API_KEY,
+            'x-rapidapi-host': API_HOST,
+          }
+        });
 
-      dlWrap.innerHTML = `
-        <a class="dl-btn" href="${resultUrl}" download="${filename}" target="_blank" rel="noopener">
-          ↓ Download ${label}
-        </a>
-        <div style="margin-top:.75rem;font-size:.65rem;color:var(--muted)">
-          If the download doesn't start automatically, right-click → <em>Save link as…</em>
-        </div>
-      `;
+        if (!res.ok) {
+          throw new Error(`API returned ${res.status} — check your RapidAPI key or quota.`);
+        }
+
+        const data = await res.json();
+
+        sl.querySelector('.status-dot').className = 'status-dot dot-ok';
+        sl.querySelector('.status-text').textContent = 'Got response — parsing formats…';
+
+        // Show video info
+        if (data.title) {
+          document.getElementById('vi-title').textContent = data.title;
+          document.getElementById('vi-meta').textContent =
+            [data.channel, fmtSeconds(data.lengthSeconds)].filter(Boolean).join(' · ');
+          document.getElementById('vi-thumb').src =
+            data.thumbnail?.thumbnails?.slice(-1)[0]?.url ||
+            `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+          videoInfo.style.display = 'flex';
+        }
+
+        // Build format list
+        // YTStream returns data.formats (array) and data.adaptiveFormats (array)
+        const allFormats = [
+          ...(data.formats || []),
+          ...(data.adaptiveFormats || []),
+        ];
+
+        if (!allFormats.length) throw new Error('No downloadable formats found for this video.');
+
+        // Sort: video with audio first, then by quality descending
+        const videoFmts = allFormats
+          .filter(f => f.url && f.mimeType?.includes('video'))
+          .sort((a, b) => (parseInt(b.height) || 0) - (parseInt(a.height) || 0));
+
+        const audioFmts = allFormats
+          .filter(f => f.url && f.mimeType?.includes('audio') && !f.mimeType?.includes('video')
+          )
+          .sort((a, b) => (parseInt(b.averageBitrate || b.bitrate) || 0) - (parseInt(a.averageBitrate || a.bitrate) || 0));
+
+        const rows = [...videoFmts, ...audioFmts];
+
+        if (!rows.length) throw new Error('No direct download URLs found.');
+
+        rows.forEach(f => {
+          const isAudio = f.mimeType?.includes('audio') && !f.mimeType?.includes('video');
+          const qual = isAudio
+            ? `${Math.round((f.averageBitrate || f.bitrate || 0) / 1000)}kbps`
+            : (f.height ? `${f.height}p` : 'video');
+          const codec = (f.mimeType || '').split(';')[0].split('/')[1] || '';
+          const hasAudio = f.audioQuality ? ' + audio' : '';
+          const label = isAudio ? 'Audio' : `Video${hasAudio}`;
+          const sizeMB = f.contentLength
+            ? `${(parseInt(f.contentLength) / 1024 / 1024).toFixed(1)} MB`
+            : '';
+
+          const row = document.createElement('a');
+          row.className = 'fmt-row';
+          row.href = f.url;
+          row.target = '_blank';
+          row.rel = 'noopener';
+          row.download = '';
+          row.innerHTML = `
+            <div class="fmt-left">
+              <span class="fmt-badge">${qual}</span>
+              <span class="fmt-type">${label} · ${codec}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:.75rem">
+              ${sizeMB ? `<span class="fmt-size">${sizeMB}</span>` : ''}
+              <span class="fmt-dl">↓ Download</span>
+            </div>
+          `;
+          fmtList.appendChild(row);
+        });
+
+        fmtSection.style.display = 'block';
+        log(`✓ Found ${rows.length} formats. Click one to download.`, 'ok');
+
+      } catch (e) {
+        sl.querySelector('.status-dot').className = 'status-dot dot-err';
+        sl.querySelector('.status-text').textContent = `Error: ${e.message}`;
+        log('If you\'re out of free API calls, check your RapidAPI dashboard.', 'info');
+      }
+
+      goBtn.disabled = false;
     }
 
     document.getElementById('url-input').addEventListener('keydown', e => {
