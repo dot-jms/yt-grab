@@ -7,8 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
 
-
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -109,7 +107,6 @@
     footer a { color:#3a3a3a; text-decoration:none; }
     footer a:hover { color:var(--accent); }
 
-
   </style>
 </head>
 <body>
@@ -125,10 +122,10 @@
     </header>
 
     <div class="card">
-
+      </div>
       <div class="notice">
         <strong>⚠</strong> Only download content you have rights to — Creative Commons, public domain, or your own videos.<br/>
-        <strong>ℹ</strong> FFmpeg merging runs entirely in your browser. No data leaves your device.
+        <strong>ℹ</strong> Merging runs entirely in your browser. No data leaves your device.
       </div>
 
       <div class="lbl">Add YouTube URL to queue</div>
@@ -146,34 +143,29 @@
 
     <footer>
       powered by <a href="https://rapidapi.com/ytjar/api/ytstream-download-youtube-videos" target="_blank">YTStream</a> via RapidAPI ·
-      merged with <a href="https://ffmpegwasm.netlify.app/" target="_blank">FFmpeg.wasm</a> ·
+      merged with <a href="https://github.com/gpac/mp4box.js" target="_blank">MP4Box.js</a> ·
       thumbnails via YouTube · no tracking · no server<br/>
       only download content you have rights to
     </footer>
   </div>
 
-  <!-- ffmpeg.wasm v0.11.6 — runs on main thread, no Web Workers, no SAB needed -->
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+  <!--
+    MP4Box.js — pure JavaScript MP4 muxer.
+    Zero WASM, zero Web Workers, zero SharedArrayBuffer.
+    Works on GitHub Pages and any static host, no special headers needed.
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js"></script>
 
   <script>
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Config
-  // ─────────────────────────────────────────────────────────────────────────────
   const KEY  = '84ff588c9bmsh25a213355c21977p1c6997jsnf9a1fe621e32';
   const HOST = 'ytstream-download-youtube-videos.p.rapidapi.com';
-  const FFMPEG_CORE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js';
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // State
-  // ─────────────────────────────────────────────────────────────────────────────
-  let queue   = [];   // array of item objects
-  let ffInst  = null;
-  let ffReady = false;
+  let queue      = [];
   let processing = false;
+  let nextId     = 1;
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Helpers
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
   function extractId(url) {
     const m = url.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([A-Za-z0-9_-]{11})/);
     return m ? m[1] : null;
@@ -200,7 +192,6 @@
   function safeFilename(str) {
     return (str||'video').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_') || 'video';
   }
-  function mb(bytes) { return (bytes/1024/1024).toFixed(1)+' MB'; }
 
   async function fetchBytes(url, onProgress) {
     const res = await fetch(url);
@@ -219,24 +210,96 @@
     return out;
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // FFmpeg init — v0.11 createFFmpeg runs on main thread, no Workers needed
-  // ─────────────────────────────────────────────────────────────────────────────
-  async function initFF() {
-    if (ffReady) return ffInst;
-    const { createFFmpeg } = FFmpeg; // global from ffmpeg.min.js
-    const ff = createFFmpeg({
-      corePath: FFMPEG_CORE,
-      log: false,
+  // ── MP4Box mux ─────────────────────────────────────────────────────────────
+  // Parses both MP4 streams with MP4Box, extracts all samples, writes one MP4.
+
+  function muxMP4(videoBytes, audioBytes) {
+    return new Promise((resolve, reject) => {
+      try {
+        const vFile = MP4Box.createFile();
+        const aFile = MP4Box.createFile();
+        let vInfo = null, aInfo = null;
+        let vSamples = [], aSamples = [];
+        let vExtracted = false, aExtracted = false;
+
+        function finish() {
+          if (!vExtracted || !aExtracted) return;
+          try {
+            const vTrack = vInfo.tracks[0];
+            const aTrack = aInfo.tracks[0];
+            const out = MP4Box.createFile();
+
+            // Copy track descriptions directly from parsed files
+            const vTrakBox = vFile.moov.traks[0];
+            const aTrakBox = aFile.moov.traks[0];
+
+            const vTid = out.addTrack({
+              id: 1, type: 'video',
+              timescale: vTrack.timescale,
+              width:  vTrack.video ? vTrack.video.width  : 1920,
+              height: vTrack.video ? vTrack.video.height : 1080,
+              hdlr: 'vide', name: 'VideoHandler',
+              description: vTrakBox.mdia.minf.stbl.stsd.entries[0],
+            });
+            const aTid = out.addTrack({
+              id: 2, type: 'audio',
+              timescale:     aTrack.timescale,
+              samplerate:    aTrack.audio ? aTrack.audio.sample_rate   : 44100,
+              channel_count: aTrack.audio ? aTrack.audio.channel_count : 2,
+              hdlr: 'soun', name: 'SoundHandler',
+              description: aTrakBox.mdia.minf.stbl.stsd.entries[0],
+            });
+
+            for (const s of vSamples) {
+              out.addSample(vTid, s.data, {
+                duration: s.duration, cts: s.cts, dts: s.dts, is_sync: s.is_sync,
+              });
+            }
+            for (const s of aSamples) {
+              out.addSample(aTid, s.data, {
+                duration: s.duration, cts: s.cts, dts: s.dts, is_sync: s.is_sync,
+              });
+            }
+
+            const ds = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
+            out.save(ds);
+            resolve(new Uint8Array(ds.buffer));
+          } catch(e) { reject(e); }
+        }
+
+        vFile.onReady = (info) => {
+          vInfo = info;
+          vFile.setExtractionOptions(info.tracks[0].id, null, { nbSamples: Infinity });
+          vFile.start();
+        };
+        vFile.onSamples = (id, user, samples) => {
+          vSamples.push(...samples);
+        };
+        vFile.onFlush = () => { vExtracted = true; finish(); };
+        vFile.onError = reject;
+
+        aFile.onReady = (info) => {
+          aInfo = info;
+          aFile.setExtractionOptions(info.tracks[0].id, null, { nbSamples: Infinity });
+          aFile.start();
+        };
+        aFile.onSamples = (id, user, samples) => {
+          aSamples.push(...samples);
+        };
+        aFile.onFlush = () => { aExtracted = true; finish(); };
+        aFile.onError = reject;
+
+        const vBuf = videoBytes.buffer.slice(0); vBuf.fileStart = 0;
+        const aBuf = audioBytes.buffer.slice(0); aBuf.fileStart = 0;
+        vFile.appendBuffer(vBuf); vFile.flush();
+        aFile.appendBuffer(aBuf); aFile.flush();
+
+      } catch(e) { reject(e); }
     });
-    await ff.load();
-    ffInst = ff; ffReady = true;
-    return ff;
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Queue rendering
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── Queue rendering ────────────────────────────────────────────────────────
+
   function renderQueue() {
     const el = document.getElementById('queue');
     el.innerHTML = '';
@@ -245,25 +308,22 @@
       div.className = `qitem ${item.state}`;
       div.id = `qi-${item.id}`;
 
-      // thumbnail sources: best available
       const thumbHtml = item.thumbUrl
         ? `<img class="qthumb" src="${item.thumbUrl}" alt="" />`
         : `<div class="qthumb-placeholder">▶</div>`;
 
-      // status text
       const statusMap = {
-        pending:    ['wait', 'Waiting…'],
-        fetching:   ['spin', 'Fetching info…'],
-        ready:      ['ok',   item.videoQual ? `${item.videoQual} · ${item.audioBitrate}kbps audio — ready` : 'Ready'],
-        downloading:['spin', item.progText || 'Downloading…'],
-        muxing:     ['spin', item.progText || 'Muxing…'],
-        done:       ['ok',   '✓ Done'],
-        error:      ['err',  item.errorMsg || 'Error'],
-        active:     ['spin', item.progText || 'Working…'],
+        pending:     ['wait', 'Waiting…'],
+        fetching:    ['spin', 'Fetching info…'],
+        ready:       ['ok',   item.videoQual ? `${item.videoQual} · ${item.audioBitrate}kbps audio — ready` : 'Ready'],
+        downloading: ['spin', item.progText || 'Downloading…'],
+        muxing:      ['spin', item.progText || 'Muxing…'],
+        done:        ['ok',   '✓ Done'],
+        error:       ['err',  item.errorMsg || 'Error'],
+        active:      ['spin', item.progText || 'Working…'],
       };
       const [sc, st] = statusMap[item.state] || ['wait',''];
 
-      // action buttons
       let actions = '';
       if (item.state === 'ready' || item.state === 'error') {
         actions += `<button class="qbtn primary" onclick="processOne(${i})">↓ Download</button>`;
@@ -271,16 +331,17 @@
       if (item.thumbUrl) {
         actions += `<button class="qbtn" onclick="toggleThumbPanel(${i})">🖼 Thumb</button>`;
       }
-      if (item.state !== 'active' && item.state !== 'downloading' && item.state !== 'muxing') {
+      if (!['active','downloading','muxing'].includes(item.state)) {
         actions += `<button class="qbtn" onclick="removeItem(${i})">✕</button>`;
       }
 
-      // thumbnail download panel
       const thumbPanel = item.showThumb && item.thumbUrl ? `
         <div class="qthumb-dl" style="display:flex">
           <img src="${item.thumbUrl}" alt="thumbnail" />
           <div class="qthumb-dl-btns">
-            ${item.thumbUrls ? item.thumbUrls.map((t,ti)=>`<button class="qbtn" onclick="dlThumb(${i},${ti})">${t.label}</button>`).join('') : `<button class="qbtn" onclick="dlThumb(${i},-1)">↓ Download</button>`}
+            ${item.thumbUrls
+              ? item.thumbUrls.map((t,ti)=>`<button class="qbtn" onclick="dlThumb(${i},${ti})">${t.label}</button>`).join('')
+              : `<button class="qbtn" onclick="dlThumb(${i},-1)">↓ Download</button>`}
           </div>
         </div>` : '';
 
@@ -303,42 +364,34 @@
       el.appendChild(div);
     });
 
-    // Show/hide process-all
-    const hasReady = queue.some(i => i.state === 'ready');
+    const hasReady   = queue.some(i => i.state === 'ready');
     const hasPending = queue.some(i => ['ready','pending'].includes(i.state));
     document.getElementById('process-all-wrap').style.display = hasPending && queue.length > 1 ? 'block' : 'none';
     document.getElementById('proc-btn').disabled = processing || !hasReady;
   }
 
   function updateItemProg(id, pct, text, sub) {
-    const fill = document.getElementById(`qpf-${id}`);
+    const fill  = document.getElementById(`qpf-${id}`);
     const subEl = document.getElementById(`qps-${id}`);
-    if (fill) fill.style.width = pct + '%';
+    if (fill)  fill.style.width = pct + '%';
     if (subEl && sub !== undefined) subEl.textContent = sub;
-    // also update status text in the item
     const item = queue.find(i=>i.id===id);
     if (item) {
-      item.pct = pct;
-      item.progText = text;
-      item.progSub = sub;
+      item.pct = pct; item.progText = text; item.progSub = sub;
       const statusEl = document.querySelector(`#qi-${id} .qstatus`);
-      if (statusEl) { statusEl.textContent = text; }
+      if (statusEl) statusEl.textContent = text;
       const progWrap = document.getElementById(`qp-${id}`);
       if (progWrap) progWrap.style.display = 'block';
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Add to queue
-  // ─────────────────────────────────────────────────────────────────────────────
-  let nextId = 1;
+  // ── Add to queue ───────────────────────────────────────────────────────────
 
   async function addToQueue() {
     const raw = document.getElementById('url').value.trim();
     if (!raw) return;
     const id = extractId(raw);
     if (!id) { alert('Could not find a YouTube video ID in that URL.'); return; }
-
     document.getElementById('url').value = '';
 
     const item = {
@@ -366,36 +419,27 @@
       item.channel  = d.channelTitle || '';
       item.duration = parseInt(d.lengthSeconds) || 0;
 
-      // Collect all thumbnail variants
       const rawThumbs = d.thumbnail;
-      const thumbArr  = Array.isArray(rawThumbs)
-        ? rawThumbs
-        : rawThumbs ? Object.values(rawThumbs) : [];
-
-      // Build sorted thumb list (biggest first)
-      const sorted = [...thumbArr].sort((a,b)=>((b.width||0)*(b.height||0))-((a.width||0)*(a.height||0)));
+      const thumbArr  = Array.isArray(rawThumbs) ? rawThumbs : rawThumbs ? Object.values(rawThumbs) : [];
+      const sorted    = [...thumbArr].sort((a,b)=>((b.width||0)*(b.height||0))-((a.width||0)*(a.height||0)));
 
       if (sorted.length) {
         item.thumbUrl  = sorted[0].url;
-        item.thumbUrls = sorted.map(t=>({
-          url: t.url,
-          label: `↓ ${t.width||'?'}×${t.height||'?'}`,
-        }));
+        item.thumbUrls = sorted.map(t=>({ url: t.url, label: `↓ ${t.width||'?'}×${t.height||'?'}` }));
       } else {
-        // Fallback to YouTube's standard thumbnail URLs
         item.thumbUrl  = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
         item.thumbUrls = [
           { url: `https://img.youtube.com/vi/${id}/maxresdefault.jpg`, label: '↓ Max (1280×720)' },
-          { url: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,     label: '↓ HQ (480×360)' },
-          { url: `https://img.youtube.com/vi/${id}/mqdefault.jpg`,     label: '↓ MQ (320×180)' },
-          { url: `https://img.youtube.com/vi/${id}/sddefault.jpg`,     label: '↓ SD (640×480)' },
+          { url: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,     label: '↓ HQ (480×360)'  },
+          { url: `https://img.youtube.com/vi/${id}/mqdefault.jpg`,     label: '↓ MQ (320×180)'  },
+          { url: `https://img.youtube.com/vi/${id}/sddefault.jpg`,     label: '↓ SD (640×480)'  },
         ];
       }
 
       const adaptive = toArr(d.adaptiveFormats);
       const vs = pickVideo(adaptive);
       const as = pickAudio(adaptive);
-      if (!vs) throw new Error('No 1080p video stream found.');
+      if (!vs) throw new Error('No video stream found.');
       if (!as) throw new Error('No audio stream found.');
 
       item.videoUrl     = vs.url;
@@ -413,68 +457,37 @@
     renderQueue();
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Process one item
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ── Process one ────────────────────────────────────────────────────────────
+
   async function processOne(idx) {
     const item = queue[idx];
-    if (!item || item.state === 'active' || item.state === 'downloading' || item.state === 'muxing') return;
+    if (!item || ['active','downloading','muxing'].includes(item.state)) return;
     processing = true;
-    renderQueue();
-
-    item.state = 'active';
-    item.pct   = 0;
-    item.progText = 'Initialising FFmpeg…';
+    item.state = 'active'; item.pct = 0; item.progText = 'Starting…';
     renderQueue();
 
     try {
-      updateItemProg(item.id, 5, 'Loading FFmpeg WASM…', 'First load ~20 MB, cached after');
-      const ff = await initFF();
-
-      // Video fetch
-      updateItemProg(item.id, 12, 'Fetching video stream…', '');
       item.state = 'downloading';
+      updateItemProg(item.id, 5, 'Fetching video stream…', '');
       const videoBytes = await fetchBytes(item.videoUrl, r => {
-        updateItemProg(item.id, 12+Math.round(r*28), 'Fetching video…', `${Math.round(r*100)}%`);
+        updateItemProg(item.id, 5+Math.round(r*40), 'Fetching video…', `${Math.round(r*100)}%`);
       });
 
-      // Audio fetch
-      updateItemProg(item.id, 42, 'Fetching audio stream…', '');
+      updateItemProg(item.id, 47, 'Fetching audio stream…', '');
       const audioBytes = await fetchBytes(item.audioUrl, r => {
-        updateItemProg(item.id, 42+Math.round(r*18), 'Fetching audio…', `${Math.round(r*100)}%`);
+        updateItemProg(item.id, 47+Math.round(r*25), 'Fetching audio…', `${Math.round(r*100)}%`);
       });
 
-      updateItemProg(item.id, 62, 'Writing files…', '');
-      ff.FS('writeFile', `v_${item.id}.${item.videoExt}`, videoBytes);
-      ff.FS('writeFile', `a_${item.id}.${item.audioExt}`, audioBytes);
-
-      // Mux
       item.state = 'muxing';
-      updateItemProg(item.id, 65, 'Muxing…', 'Stream copy — no re-encode');
+      updateItemProg(item.id, 74, 'Muxing streams…', 'Pure JS — no WASM needed');
 
-      // 0.11 progress callback via setProgress
-      ff.setProgress(({ ratio }) => {
-        if (ratio >= 0) {
-          const p = Math.round(ratio * 100);
-          updateItemProg(item.id, 65+Math.round(ratio*28), `Muxing… ${p}%`, '');
-        }
-      });
+      const outBytes = await muxMP4(videoBytes, audioBytes);
 
-      await ff.run(
-        '-i', `v_${item.id}.${item.videoExt}`,
-        '-i', `a_${item.id}.${item.audioExt}`,
-        '-c', 'copy',
-        '-movflags', '+faststart',
-        '-shortest',
-        `out_${item.id}.mp4`
-      );
-
-      updateItemProg(item.id, 95, 'Reading output…', '');
-      const out = ff.FS('readFile', `out_${item.id}.mp4`);
-      const blob = new Blob([out.buffer], { type: 'video/mp4' });
+      updateItemProg(item.id, 97, 'Preparing download…', '');
+      const blob    = new Blob([outBytes], { type: 'video/mp4' });
       const blobUrl = URL.createObjectURL(blob);
+      const fname   = safeFilename(item.title) + '_1080p.mp4';
 
-      const fname = safeFilename(item.title) + '_1080p.mp4';
       const a = document.createElement('a');
       a.href = blobUrl; a.download = fname;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -482,11 +495,6 @@
 
       updateItemProg(item.id, 100, `✓ Saved as ${fname}`, '');
       item.state = 'done';
-
-      // Cleanup VFS
-      for (const f of [`v_${item.id}.${item.videoExt}`, `a_${item.id}.${item.audioExt}`, `out_${item.id}.mp4`]) {
-        try { ff.FS('unlink', f); } catch {}
-      }
 
     } catch(e) {
       item.state    = 'error';
@@ -498,20 +506,12 @@
     renderQueue();
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Process all
-  // ─────────────────────────────────────────────────────────────────────────────
   async function processAll() {
     for (let i = 0; i < queue.length; i++) {
-      if (queue[i].state === 'ready') {
-        await processOne(i);
-      }
+      if (queue[i].state === 'ready') await processOne(i);
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Thumbnail download
-  // ─────────────────────────────────────────────────────────────────────────────
   function toggleThumbPanel(idx) {
     queue[idx].showThumb = !queue[idx].showThumb;
     renderQueue();
@@ -519,36 +519,22 @@
 
   function dlThumb(idx, thumbIdx) {
     const item = queue[idx];
-    const tu = thumbIdx === -1
-      ? item.thumbUrl
-      : item.thumbUrls[thumbIdx].url;
+    const tu = thumbIdx === -1 ? item.thumbUrl : item.thumbUrls[thumbIdx].url;
     if (!tu) return;
-
-    // Fetch as blob so the browser downloads it instead of navigating
-    fetch(tu)
-      .then(r => r.blob())
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = safeFilename(item.title) + '_thumb.jpg';
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-      })
-      .catch(() => window.open(tu, '_blank'));
+    fetch(tu).then(r=>r.blob()).then(blob=>{
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = safeFilename(item.title)+'_thumb.jpg';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url), 5000);
+    }).catch(()=>window.open(tu,'_blank'));
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Remove item
-  // ─────────────────────────────────────────────────────────────────────────────
   function removeItem(idx) {
     queue.splice(idx, 1);
     renderQueue();
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Enter key on input
-  // ─────────────────────────────────────────────────────────────────────────────
   document.getElementById('url').addEventListener('keydown', e => {
     if (e.key === 'Enter') addToQueue();
   });
