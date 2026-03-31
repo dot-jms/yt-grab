@@ -11,13 +11,14 @@
     :root {
       --bg: #0a0a0a; --surface: #111; --border: #222;
       --accent: #e8ff47; --red: #ff4747; --text: #f0f0f0;
-      --muted: #666; --r: 4px; --green: #4ade80; --blue: #60a5fa;
+      --muted: #666; --r: 4px;
     }
     body {
       background: var(--bg); color: var(--text);
       font-family: 'Space Mono', monospace;
       min-height: 100vh; display: flex; flex-direction: column;
-      align-items: center; padding: 2rem 2rem 4rem; overflow-x: hidden;
+      align-items: center; justify-content: center;
+      padding: 2rem; overflow-x: hidden;
     }
     body::before {
       content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 100;
@@ -29,107 +30,91 @@
     .corner-bl { bottom:20px; left:20px; border-width:0 0 2px 2px; }
     .corner-br { bottom:20px; right:20px; border-width:0 2px 2px 0; }
 
-    .container { width:100%; max-width:700px; margin-top: 3rem; }
+    .container { width:100%; max-width:660px; animation: up .5s ease both; }
     @keyframes up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
 
-    header { margin-bottom: 2rem; animation: up .5s ease both; }
+    header { margin-bottom: 2.5rem; }
     .logo { font-family:'Syne',sans-serif; font-size:clamp(2.8rem,10vw,4.5rem); font-weight:800; line-height:.9; letter-spacing:-.03em; color:var(--accent); text-shadow:4px 4px 0 #2a3000; }
     .logo span { color:var(--text); }
     .tagline { margin-top:.6rem; color:var(--muted); font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; }
 
-    /* Tab switcher */
-    .tabs { display:flex; gap:.4rem; margin-bottom:1.5rem; animation: up .5s .05s ease both; }
-    .tab { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:var(--r); color:var(--muted); cursor:pointer; font-family:'Syne',sans-serif; font-size:.8rem; font-weight:800; letter-spacing:.06em; padding:.65rem; text-align:center; text-transform:uppercase; transition:all .15s; }
-    .tab:hover { border-color:#444; color:var(--text); }
-    .tab.active { background:#1a1a00; border-color:var(--accent); color:var(--accent); }
-
-    .panel { display:none; }
-    .panel.active { display:block; }
-
-    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:1.75rem; position:relative; animation: up .5s .1s ease both; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:1.75rem; position:relative; }
     .card::before { content:''; position:absolute; top:-1px;left:-1px;right:-1px; height:2px; background:linear-gradient(90deg,var(--accent),transparent); border-radius:var(--r) var(--r) 0 0; }
 
     .lbl { font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:.4rem; }
-    .row { display:flex; gap:.6rem; margin-bottom:.75rem; }
-    input[type=text] { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:var(--r); color:var(--text); font-family:'Space Mono',monospace; font-size:.8rem; padding:.7rem .9rem; outline:none; transition:border-color .2s; }
-    input[type=text]:focus { border-color:var(--accent); }
-    input[type=text]::placeholder { color:#2a2a2a; }
+
+    .row { display:flex; gap:.6rem; margin-bottom:1.25rem; }
+    input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:var(--r); color:var(--text); font-family:'Space Mono',monospace; font-size:.8rem; padding:.7rem .9rem; outline:none; transition:border-color .2s; }
+    input:focus { border-color:var(--accent); }
+    input::placeholder { color:#2a2a2a; }
 
     .btn { background:var(--accent); border:none; border-radius:var(--r); color:#000; cursor:pointer; font-family:'Syne',sans-serif; font-size:.85rem; font-weight:800; letter-spacing:.04em; padding:.7rem 1.4rem; transition:transform .1s,box-shadow .1s; white-space:nowrap; }
     .btn:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(232,255,71,.3); }
-    .btn:active { transform:none; box-shadow:none; }
+    .btn:active { transform:none; }
     .btn:disabled { opacity:.35; cursor:not-allowed; transform:none; box-shadow:none; }
 
-    .notice { background:#161200; border:1px solid #302800; border-radius:var(--r); padding:.65rem .9rem; margin-bottom:1.25rem; font-size:.67rem; color:#776600; line-height:1.8; }
+    .notice { background:#161200; border:1px solid #302800; border-radius:var(--r); padding:.65rem .9rem; margin-bottom:1.25rem; font-size:.67rem; color:#776600; line-height:1.6; }
     .notice strong { color:var(--accent); }
-    .notice .step { display:flex; gap:.5rem; align-items:baseline; margin-top:.3rem; }
-    .notice .step-num { color:var(--accent); font-weight:700; flex-shrink:0; }
 
-    /* Steps visual */
-    .steps { display:flex; gap:.5rem; margin-bottom:1.25rem; }
-    .step-badge { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:var(--r); padding:.5rem .6rem; text-align:center; }
-    .step-badge .sn { font-family:'Syne',sans-serif; font-size:1.2rem; font-weight:800; color:var(--accent); display:block; }
-    .step-badge .sl { font-size:.58rem; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; }
-    .step-arrow { color:#333; align-self:center; font-size:1rem; }
-
-    /* Queue */
-    #queue { margin-top: 1.5rem; display: flex; flex-direction: column; gap: .75rem; }
-    .qitem { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; animation: up .25s ease both; transition: border-color .2s; }
-    .qitem.active  { border-color: var(--accent); }
-    .qitem.done    { border-color: #1a3a1a; }
-    .qitem.error   { border-color: #3a1a1a; }
-    .qitem-top { display:flex; gap:.75rem; align-items:center; padding:.75rem; }
-    .qthumb { width:88px; height:50px; object-fit:cover; border-radius:2px; background:#1a1a1a; flex-shrink:0; }
-    .qthumb-placeholder { width:88px; height:50px; background:#1a1a1a; border-radius:2px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#333; font-size:1.2rem; }
-    .qinfo { flex:1; min-width:0; }
-    .qtitle { font-family:'Syne',sans-serif; font-size:.82rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .qsub   { font-size:.62rem; color:var(--muted); margin-top:.15rem; }
-    .qstatus { font-size:.62rem; margin-top:.2rem; }
-    .qstatus.spin { color:var(--accent); }
-    .qstatus.ok   { color:var(--green); }
-    .qstatus.err  { color:var(--red); }
-    .qstatus.wait { color:#444; }
-    .qactions { display:flex; gap:.4rem; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
-    .qbtn { background:transparent; border:1px solid var(--border); border-radius:var(--r); color:var(--muted); cursor:pointer; font-family:'Syne',sans-serif; font-size:.65rem; font-weight:800; padding:.3rem .6rem; transition:all .15s; white-space:nowrap; }
-    .qbtn:hover { border-color:var(--accent); color:var(--accent); }
-    .qbtn.primary { background:var(--accent); border-color:var(--accent); color:#000; }
-    .qbtn.primary:hover { box-shadow:0 2px 10px rgba(232,255,71,.35); }
-    .qbtn:disabled { opacity:.3; cursor:not-allowed; }
-    .qprog { padding: 0 .75rem .65rem; display:none; }
-    .qprog-bar-bg { background:#1a1a1a; border-radius:2px; height:4px; overflow:hidden; }
-    .qprog-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .35s ease; width:0%; }
-    .qprog-sub { font-size:.6rem; color:var(--muted); margin-top:.3rem; }
-
-    #process-all-wrap { display:none; margin-top:1rem; }
-    .proc-btn { display:flex; align-items:center; justify-content:center; gap:.5rem; width:100%; background:var(--accent); border:none; border-radius:var(--r); color:#000; cursor:pointer; font-family:'Syne',sans-serif; font-size:.95rem; font-weight:800; letter-spacing:.04em; padding:.85rem; transition:transform .1s,box-shadow .1s; }
-    .proc-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(232,255,71,.35); }
-    .proc-btn:disabled { opacity:.35; cursor:not-allowed; transform:none; box-shadow:none; }
-
-    /* Merge panel */
-    .drop-zone { border:2px dashed var(--border); border-radius:var(--r); padding:2.5rem 1rem; text-align:center; cursor:pointer; transition:all .2s; margin-bottom:1.25rem; }
-    .drop-zone:hover, .drop-zone.drag-over { border-color:var(--accent); background:#0f0f00; }
-    .drop-zone .dz-icon { font-size:2rem; margin-bottom:.5rem; }
-    .drop-zone .dz-label { font-family:'Syne',sans-serif; font-size:.9rem; font-weight:700; color:var(--text); }
-    .drop-zone .dz-sub { font-size:.65rem; color:var(--muted); margin-top:.25rem; }
-    input[type=file] { display:none; }
-
-    #merge-log { display:none; margin-top:1rem; }
-    .mlog-line { display:flex; gap:.5rem; align-items:flex-start; margin-bottom:.3rem; font-size:.72rem; animation: up .2s ease both; }
-    .mdot { width:6px; height:6px; border-radius:50%; margin-top:.3rem; flex-shrink:0; }
-    .mdot.spin { background:var(--accent); animation:blink 1s infinite; }
-    .mdot.ok   { background:var(--green); }
-    .mdot.err  { background:var(--red); }
-    .mdot.info { background:var(--blue); }
+    /* Status log */
+    #log { display:none; margin-top:1.25rem; border-top:1px solid var(--border); padding-top:1rem; }
+    .log-line { display:flex; gap:.5rem; align-items:flex-start; margin-bottom:.3rem; font-size:.72rem; animation:li .2s ease both; }
+    @keyframes li { from{opacity:0;transform:translateX(-4px)} to{opacity:1;transform:none} }
+    .dot { width:6px; height:6px; border-radius:50%; margin-top:.3rem; flex-shrink:0; }
+    .d-spin { background:var(--accent); animation:blink 1s infinite; }
+    .d-ok   { background:#4ade80; }
+    .d-err  { background:var(--red); }
+    .d-info { background:#60a5fa; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
-    .mlog-text { line-height:1.5; color:var(--muted); }
-    .mlog-text.hi { color:var(--text); }
+    .log-text { line-height:1.5; color:var(--muted); }
+    .log-text.hi { color:var(--text); }
 
-    #merge-prog-wrap { display:none; margin-top:1rem; }
-    .mprog-label { font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.35rem; }
-    .mprog-bg { background:var(--bg); border:1px solid var(--border); border-radius:2px; height:6px; overflow:hidden; }
-    .mprog-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .4s ease; width:0%; }
+    /* Video info */
+    #vinfo { display:none; margin-top:1rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--r); padding:.9rem; flex-direction:row; gap:.9rem; align-items:center; }
+    #vinfo img { width:100px; height:56px; object-fit:cover; border-radius:2px; flex-shrink:0; background:#1a1a1a; }
+    .vi-title { font-family:'Syne',sans-serif; font-size:.85rem; font-weight:700; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+    .vi-sub { font-size:.63rem; color:var(--muted); margin-top:.25rem; }
 
-    footer { margin-top:2.5rem; font-size:.62rem; color:var(--muted); text-align:center; line-height:1.9; animation: up .5s .2s ease both; }
+    /* Format list */
+    #fmts { display:none; margin-top:1.25rem; border-top:1px solid var(--border); padding-top:1rem; }
+    .fmts-lbl { font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:.6rem; }
+
+    .fmt-group-title { font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:#444; margin:.75rem 0 .4rem; }
+    .fmt-group-title:first-child { margin-top:0; }
+
+    .fmt { display:flex; align-items:center; justify-content:space-between; gap:.6rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--r); padding:.55rem .9rem; text-decoration:none; color:var(--text); transition:border-color .15s,background .15s; cursor:pointer; margin-bottom:.3rem; }
+    .fmt:hover { border-color:var(--accent); background:#141400; }
+    .fmt-left { display:flex; align-items:center; gap:.6rem; }
+    .fmt-badge { font-size:.63rem; font-family:'Syne',sans-serif; font-weight:800; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:2px; padding:.12rem .35rem; color:var(--accent); min-width:44px; text-align:center; white-space:nowrap; }
+    .fmt-codec { font-size:.68rem; color:var(--muted); }
+    .fmt-size { font-size:.63rem; color:#444; }
+    .fmt-arrow { font-size:.8rem; color:var(--accent); font-family:'Syne',sans-serif; font-weight:800; }
+
+    .fmt-tar { background:var(--accent); border:none; border-radius:var(--r); color:#000; cursor:pointer; font-family:'Syne',sans-serif; font-size:.63rem; font-weight:800; padding:.22rem .5rem; transition:transform .1s,box-shadow .1s; white-space:nowrap; flex-shrink:0; }
+    .fmt-tar:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(232,255,71,.4); }
+    .fmt-tar:disabled { opacity:.35; cursor:not-allowed; transform:none; box-shadow:none; }
+
+    /* Merge section */
+    #merge-section { margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.25rem; display:none; }
+    .merge-title { font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:.75rem; }
+    .drop-zone { border:2px dashed var(--border); border-radius:var(--r); padding:1.75rem 1rem; text-align:center; cursor:pointer; transition:all .2s; }
+    .drop-zone:hover, .drop-zone.drag-over { border-color:var(--accent); background:#0f0f00; }
+    .drop-zone .dz-icon { font-size:1.6rem; margin-bottom:.35rem; }
+    .drop-zone .dz-label { font-family:'Syne',sans-serif; font-size:.82rem; font-weight:700; color:var(--text); }
+    .drop-zone .dz-sub { font-size:.62rem; color:var(--muted); margin-top:.2rem; }
+    input[type=file] { display:none; }
+    #merge-log { display:none; margin-top:.9rem; }
+    .mlog-line { display:flex; gap:.5rem; align-items:flex-start; margin-bottom:.25rem; font-size:.7rem; animation:li .2s ease both; }
+    .mdot { width:6px; height:6px; border-radius:50%; margin-top:.28rem; flex-shrink:0; }
+    .mdot.spin { background:var(--accent); animation:blink 1s infinite; }
+    .mdot.ok   { background:#4ade80; }
+    .mdot.err  { background:var(--red); }
+    #merge-prog { display:none; margin-top:.75rem; }
+    .mprog-lbl { font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.3rem; }
+    .mprog-bg  { background:#1a1a1a; border-radius:2px; height:5px; overflow:hidden; }
+    .mprog-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .35s ease; width:0%; }
+
+    footer { margin-top:2rem; font-size:.62rem; color:var(--muted); text-align:center; line-height:1.9; }
     footer a { color:#3a3a3a; text-decoration:none; }
     footer a:hover { color:var(--accent); }
   </style>
@@ -143,562 +128,524 @@
   <div class="container">
     <header>
       <div class="logo">yt<span>-</span>grab</div>
-      <div class="tagline">1080p + best audio · two-step merge · no server needed</div>
+      <div class="tagline">YouTube video downloader · powered by YTStream</div>
     </header>
 
-    <div class="tabs">
-      <div class="tab active" onclick="switchTab('download')">① Download Streams</div>
-      <div class="tab" onclick="switchTab('merge')">② Merge .tar → .mp4</div>
-    </div>
-
-    <!-- ── DOWNLOAD PANEL ── -->
-    <div class="panel active" id="panel-download">
-      <div class="card">
-        <div class="notice">
-          <strong>How it works:</strong>
-          <div class="step"><span class="step-num">①</span> Paste a YouTube URL and click ADD — it fetches video info.</div>
-          <div class="step"><span class="step-num">②</span> Click Download TAR — it fetches both streams and bundles them into a <strong>.tar</strong> file.</div>
-          <div class="step"><span class="step-num">③</span> Switch to the <strong>② Merge</strong> tab, drop the .tar in, get your merged .mp4.</div>
-        </div>
-
-        <div class="lbl">Add YouTube URL to queue</div>
-        <div class="row">
-          <input type="text" id="url" placeholder="https://www.youtube.com/watch?v=..." />
-          <button class="btn" id="add-btn" onclick="addToQueue()">ADD</button>
-        </div>
-
-        <div id="process-all-wrap">
-          <button class="proc-btn" id="proc-btn" onclick="processAll()">↓ Download All as .tar</button>
-        </div>
-        <div id="queue"></div>
+    <div class="card">
+      <div class="notice">
+        <strong>⚠</strong> Only download content you have rights to — Creative Commons, public domain, or your own videos.
       </div>
-    </div>
 
-    <!-- ── MERGE PANEL ── -->
-    <div class="panel" id="panel-merge">
-      <div class="card">
-        <div class="notice">
-          Drop the <strong>.tar</strong> file you downloaded in Step ①. The video and audio streams inside will be merged into a single <strong>.mp4</strong> right here in your browser — no upload, no server.
+      <div class="lbl">YouTube URL</div>
+      <div class="row">
+        <input type="text" id="url" placeholder="https://www.youtube.com/watch?v=..." />
+        <button class="btn" id="go" onclick="go()">GO</button>
+      </div>
+
+      <div id="log"></div>
+      <div id="vinfo">
+        <img id="vthumb" src="" alt="" />
+        <div>
+          <div class="vi-title" id="vtitle"></div>
+          <div class="vi-sub" id="vsub"></div>
         </div>
-
+      </div>
+      <div id="fmts">
+        <div class="fmts-lbl">Pick a format to download</div>
+        <div id="fmts-list"></div>
+      </div>
+      <div id="merge-section">
+        <div class="merge-title">② Merge .tar → .mp4</div>
         <div class="drop-zone" id="drop-zone" onclick="document.getElementById('tar-input').click()">
           <div class="dz-icon">📦</div>
-          <div class="dz-label">Drop .tar file here</div>
-          <div class="dz-sub">or click to browse</div>
+          <div class="dz-label">Drop .tar here or click to browse</div>
+          <div class="dz-sub">Drop the .tar you downloaded above — streams will be merged in your browser</div>
         </div>
-        <input type="file" id="tar-input" accept=".tar" onchange="handleTarFile(this.files[0])" />
-
-        <div id="merge-prog-wrap">
-          <div class="mprog-label" id="mprog-label">Processing…</div>
+        <input type="file" id="tar-input" accept=".tar" onchange="handleTar(this.files[0])" />
+        <div id="merge-prog">
+          <div class="mprog-lbl" id="mprog-lbl">Processing…</div>
           <div class="mprog-bg"><div class="mprog-fill" id="mprog-fill"></div></div>
         </div>
         <div id="merge-log"></div>
       </div>
+
     </div>
 
     <footer>
       powered by <a href="https://rapidapi.com/ytjar/api/ytstream-download-youtube-videos" target="_blank">YTStream</a> via RapidAPI ·
-      merged with <a href="https://github.com/gpac/mp4box.js" target="_blank">MP4Box.js</a> ·
-      no tracking · no server<br/>
+      no tracking · no storage<br/>
       only download content you have rights to
     </footer>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js"></script>
-
   <script>
-  // ── Tab switching ──────────────────────────────────────────────────────────
-  function switchTab(name) {
-    document.querySelectorAll('.tab').forEach((t,i) => {
-      t.classList.toggle('active', (i===0&&name==='download')||(i===1&&name==='merge'));
-    });
-    document.getElementById('panel-download').classList.toggle('active', name==='download');
-    document.getElementById('panel-merge').classList.toggle('active', name==='merge');
-  }
+    const KEY  = '84ff588c9bmsh25a213355c21977p1c6997jsnf9a1fe621e32';
+    const HOST = 'ytstream-download-youtube-videos.p.rapidapi.com';
 
-  // ── Config ─────────────────────────────────────────────────────────────────
-  const KEY  = '84ff588c9bmsh25a213355c21977p1c6997jsnf9a1fe621e32';
-  const HOST = 'ytstream-download-youtube-videos.p.rapidapi.com';
+    const logEl   = document.getElementById('log');
+    const vinfoEl = document.getElementById('vinfo');
+    const fmtsEl  = document.getElementById('fmts');
+    const fmtList = document.getElementById('fmts-list');
+    const goBtn   = document.getElementById('go');
 
-  let queue      = [];
-  let processing = false;
-  let nextId     = 1;
-
-  // ── Helpers ────────────────────────────────────────────────────────────────
-  function extractId(url) {
-    const m = url.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-    return m ? m[1] : null;
-  }
-  function fmtTime(s) {
-    if (!s || isNaN(s)) return '';
-    return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-  }
-  function toArr(obj) {
-    return obj ? (Array.isArray(obj) ? obj : Object.values(obj)) : [];
-  }
-  function pickVideo(adaptive) {
-    const vs = adaptive.filter(f => f.url && f.mimeType?.includes('video'))
-                       .sort((a,b)=>(parseInt(b.height)||0)-(parseInt(a.height)||0));
-    return vs.find(f=>parseInt(f.height)===1080&&f.mimeType?.includes('mp4'))
-        || vs.find(f=>parseInt(f.height)===1080)
-        || vs[0] || null;
-  }
-  function pickAudio(adaptive) {
-    const as = adaptive.filter(f => f.url && f.mimeType?.includes('audio'))
-                       .sort((a,b)=>(parseInt(b.averageBitrate||b.bitrate)||0)-(parseInt(a.averageBitrate||a.bitrate)||0));
-    return as.find(f=>f.mimeType?.includes('mp4a')) || as[0] || null;
-  }
-  function safeFilename(str) {
-    return (str||'video').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_') || 'video';
-  }
-
-  async function fetchBytes(url, onProgress) {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status} fetching stream`);
-    const total = parseInt(res.headers.get('content-length')||'0');
-    const reader = res.body.getReader();
-    const chunks = []; let got = 0;
-    while (true) {
-      const {done, value} = await reader.read();
-      if (done) break;
-      chunks.push(value); got += value.length;
-      if (total && onProgress) onProgress(got/total);
+    function addLog(msg, type='info') {
+      logEl.style.display = 'block';
+      const dc = {spin:'d-spin',ok:'d-ok',err:'d-err',info:'d-info'}[type]||'d-info';
+      const hi = (type==='spin'||type==='ok') ? 'hi' : '';
+      const el = document.createElement('div');
+      el.className = 'log-line';
+      el.innerHTML = `<div class="dot ${dc}"></div><div class="log-text ${hi}">${msg}</div>`;
+      logEl.appendChild(el);
+      return el;
     }
-    const out = new Uint8Array(got); let off = 0;
-    for (const c of chunks) { out.set(c, off); off += c.length; }
-    return out;
-  }
 
-  // ── TAR builder (no dependencies) ─────────────────────────────────────────
-  // Minimal POSIX ustar tar writer — enough to bundle two binary files.
-  function buildTar(files) {
-    // files = [{name, data: Uint8Array}]
-    const blocks = [];
-    for (const {name, data} of files) {
-      // Header block (512 bytes)
-      const header = new Uint8Array(512);
-      const enc = new TextEncoder();
-
-      // name (100 bytes)
-      header.set(enc.encode(name.slice(0,100)), 0);
-      // mode
-      header.set(enc.encode('0000644\0'), 100);
-      // uid, gid
-      header.set(enc.encode('0000000\0'), 108);
-      header.set(enc.encode('0000000\0'), 116);
-      // size (11 octal digits + space)
-      const sizeOctal = data.length.toString(8).padStart(11,'0') + ' ';
-      header.set(enc.encode(sizeOctal), 124);
-      // mtime
-      const mtime = Math.floor(Date.now()/1000).toString(8).padStart(11,'0') + ' ';
-      header.set(enc.encode(mtime), 136);
-      // type flag: '0' = regular file
-      header[156] = 48; // '0'
-      // ustar magic
-      header.set(enc.encode('ustar  \0'), 257);
-
-      // Checksum
-      let sum = 0;
-      for (let i = 0; i < 512; i++) sum += (i>=148&&i<156) ? 32 : header[i];
-      const chk = sum.toString(8).padStart(6,'0') + '\0 ';
-      header.set(enc.encode(chk), 148);
-
-      blocks.push(header);
-
-      // Data blocks (512-byte aligned)
-      const padded = Math.ceil(data.length / 512) * 512;
-      const dataBlock = new Uint8Array(padded);
-      dataBlock.set(data);
-      blocks.push(dataBlock);
+    function reset() {
+      logEl.innerHTML=''; logEl.style.display='none';
+      vinfoEl.style.display='none';
+      fmtsEl.style.display='none';
+      fmtList.innerHTML='';
     }
-    // Two 512-byte zero blocks = end of archive
-    blocks.push(new Uint8Array(1024));
 
-    // Concatenate
-    const total = blocks.reduce((a,b) => a+b.length, 0);
-    const out = new Uint8Array(total);
-    let off = 0;
-    for (const b of blocks) { out.set(b, off); off += b.length; }
-    return out;
-  }
-
-  // ── TAR parser ────────────────────────────────────────────────────────────
-  function parseTar(buffer) {
-    const data = new Uint8Array(buffer);
-    const dec  = new TextDecoder();
-    const files = {};
-    let pos = 0;
-    while (pos + 512 <= data.length) {
-      const header = data.slice(pos, pos+512);
-      if (header.every(b => b === 0)) break; // end-of-archive
-      const name  = dec.decode(header.slice(0,100)).replace(/\0/g,'').trim();
-      const size  = parseInt(dec.decode(header.slice(124,136)).replace(/\0/g,'').trim(), 8);
-      pos += 512;
-      if (name && size > 0) {
-        files[name] = data.slice(pos, pos+size);
-      }
-      pos += Math.ceil(size/512)*512;
+    function extractId(url) {
+      const m = url.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+      return m ? m[1] : null;
     }
-    return files;
-  }
 
-  // ── MP4Box mux ─────────────────────────────────────────────────────────────
-  function muxMP4(videoBytes, audioBytes) {
-    return new Promise((resolve, reject) => {
+    function humanSize(bytes) {
+      if (!bytes) return '';
+      const mb = parseInt(bytes) / 1024 / 1024;
+      return mb > 1 ? `${mb.toFixed(1)} MB` : `${(parseInt(bytes)/1024).toFixed(0)} KB`;
+    }
+
+    function fmtTime(s) {
+      if (!s) return '';
+      const m = Math.floor(s/60), sec = s%60;
+      return `${m}:${String(sec).padStart(2,'0')}`;
+    }
+
+    function codecLabel(mimeType='') {
+      if (mimeType.includes('avc1') || mimeType.includes('avc')) return 'H.264';
+      if (mimeType.includes('vp9'))  return 'VP9';
+      if (mimeType.includes('av01') || mimeType.includes('av1')) return 'AV1';
+      if (mimeType.includes('mp4a')) return 'AAC';
+      if (mimeType.includes('opus')) return 'Opus';
+      return mimeType.split(';')[0].split('/')[1] || '?';
+    }
+
+    function containerLabel(mimeType='') {
+      if (mimeType.includes('webm')) return 'webm';
+      if (mimeType.includes('mp4'))  return 'mp4';
+      return '';
+    }
+
+    async function go() {
+      const raw = document.getElementById('url').value.trim();
+      if (!raw) { document.getElementById('url').focus(); return; }
+
+      const id = extractId(raw);
+      if (!id) { reset(); addLog('Could not find a YouTube video ID in that URL.', 'err'); return; }
+
+      reset();
+      goBtn.disabled = true;
+      const sl = addLog('Fetching video info from YTStream…', 'spin');
+
       try {
-        const vFile = MP4Box.createFile();
-        const aFile = MP4Box.createFile();
-        let vInfo = null, aInfo = null;
-        let vSamples = [], aSamples = [];
-        let vDone = false, aDone = false;
+        const res = await fetch(`https://${HOST}/dl?id=${id}`, {
+          headers: { 'x-rapidapi-key': KEY, 'x-rapidapi-host': HOST }
+        });
 
-        function finish() {
-          if (!vDone || !aDone) return;
-          try {
-            const vTrack = vInfo.tracks[0];
-            const aTrack = aInfo.tracks[0];
-            const out = MP4Box.createFile();
+        if (res.status === 429) throw new Error('Rate limit hit — try again in a minute.');
+        if (res.status === 403) throw new Error('API key error or subscription issue.');
+        if (!res.ok) throw new Error(`API error ${res.status}`);
 
-            const vTid = out.addTrack({
-              id: 1, type: 'video',
-              timescale: vTrack.timescale,
-              width:  vTrack.video ? vTrack.video.width  : 1920,
-              height: vTrack.video ? vTrack.video.height : 1080,
-              hdlr: 'vide', name: 'VideoHandler',
-              description: vFile.moov.traks[0].mdia.minf.stbl.stsd.entries[0],
-            });
-            const aTid = out.addTrack({
-              id: 2, type: 'audio',
-              timescale:     aTrack.timescale,
-              samplerate:    aTrack.audio ? aTrack.audio.sample_rate   : 44100,
-              channel_count: aTrack.audio ? aTrack.audio.channel_count : 2,
-              hdlr: 'soun', name: 'SoundHandler',
-              description: aFile.moov.traks[0].mdia.minf.stbl.stsd.entries[0],
-            });
+        const d = await res.json();
+        if (d.status && d.status !== 'OK') throw new Error(`API returned: ${d.status}`);
 
-            for (const s of vSamples) out.addSample(vTid, s.data, { duration:s.duration, cts:s.cts, dts:s.dts, is_sync:s.is_sync });
-            for (const s of aSamples) out.addSample(aTid, s.data, { duration:s.duration, cts:s.cts, dts:s.dts, is_sync:s.is_sync });
+        sl.querySelector('.dot').className = 'dot d-ok';
+        sl.querySelector('.log-text').textContent = `Got ${d.title || 'video'} — parsing formats…`;
+        sl.querySelector('.log-text').classList.add('hi');
 
-            const ds = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
-            out.save(ds);
-            resolve(new Uint8Array(ds.buffer));
-          } catch(e) { reject(e); }
+        // Show video info
+        if (d.title) {
+          document.getElementById('vtitle').textContent = d.title;
+          document.getElementById('vsub').textContent =
+            [d.channelTitle, fmtTime(parseInt(d.lengthSeconds))].filter(Boolean).join(' · ');
+          // Best thumbnail
+          const thumbs = d.thumbnail;
+          const thumbUrl = Array.isArray(thumbs)
+            ? thumbs[thumbs.length-1]?.url
+            : (thumbs?.[Object.keys(thumbs).sort((a,b)=>b-a)[0]]?.url
+               || `https://img.youtube.com/vi/${id}/hqdefault.jpg`);
+          document.getElementById('vthumb').src = thumbUrl || `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+          vinfoEl.style.display = 'flex';
         }
 
-        vFile.onReady = (info) => {
-          vInfo = info;
-          vFile.setExtractionOptions(info.tracks[0].id, null, { nbSamples: Infinity });
-          vFile.start();
-        };
-        vFile.onSamples = (id, user, samples) => { vSamples.push(...samples); };
-        vFile.onFlush   = () => { vDone = true; finish(); };
-        vFile.onError   = reject;
+        // The API returns formats and adaptiveFormats as objects keyed by index
+        // Convert to arrays
+        const toArr = obj => obj ? (Array.isArray(obj) ? obj : Object.values(obj)) : [];
+        const formats         = toArr(d.formats);
+        const adaptiveFormats = toArr(d.adaptiveFormats);
 
-        aFile.onReady = (info) => {
-          aInfo = info;
-          aFile.setExtractionOptions(info.tracks[0].id, null, { nbSamples: Infinity });
-          aFile.start();
-        };
-        aFile.onSamples = (id, user, samples) => { aSamples.push(...samples); };
-        aFile.onFlush   = () => { aDone = true; finish(); };
-        aFile.onError   = reject;
+        // Video formats: those with both video + audio (formats array, itag 18 etc)
+        // Adaptive: video-only or audio-only streams
+        const combined = formats.filter(f => f.url && f.mimeType?.includes('video'));
+        const videoOnly = adaptiveFormats.filter(f => f.url && f.mimeType?.includes('video'));
+        const audioOnly = adaptiveFormats.filter(f => f.url && f.mimeType?.includes('audio'));
 
-        const vBuf = videoBytes.buffer.slice(0); vBuf.fileStart = 0;
-        const aBuf = audioBytes.buffer.slice(0); aBuf.fileStart = 0;
-        vFile.appendBuffer(vBuf); vFile.flush();
-        aFile.appendBuffer(aBuf); aFile.flush();
+        // Store audioOnly on window so TAR buttons can access it
+        window._lastAudioOnly = audioOnly;
 
-      } catch(e) { reject(e); }
-    });
-  }
+        // Sort by height descending
+        const byHeight = arr => [...arr].sort((a,b) => (parseInt(b.height)||0)-(parseInt(a.height)||0));
+        const byBitrate = arr => [...arr].sort((a,b) => (parseInt(b.averageBitrate||b.bitrate)||0)-(parseInt(a.averageBitrate||a.bitrate)||0));
 
-  // ── Queue rendering ────────────────────────────────────────────────────────
-  function renderQueue() {
-    const el = document.getElementById('queue');
-    el.innerHTML = '';
-    queue.forEach((item, i) => {
-      const div = document.createElement('div');
-      div.className = `qitem ${item.state}`;
-      div.id = `qi-${item.id}`;
+        // Deduplicate by qualityLabel + codec
+        function dedup(arr) {
+          const seen = new Set();
+          return arr.filter(f => {
+            const key = `${f.qualityLabel}-${codecLabel(f.mimeType)}`;
+            if (seen.has(key)) return false;
+            seen.add(key); return true;
+          });
+        }
 
-      const thumbHtml = item.thumbUrl
-        ? `<img class="qthumb" src="${item.thumbUrl}" alt="" />`
-        : `<div class="qthumb-placeholder">▶</div>`;
+        const rows = [
+          { group: '📹 Video + Audio (ready to download)', items: dedup(byHeight(combined)) },
+          { group: '🎞 Video only (no audio)', items: dedup(byHeight(videoOnly)) },
+          { group: '🎵 Audio only', items: dedup(byBitrate(audioOnly)) },
+        ].filter(g => g.items.length > 0);
 
-      const statusMap = {
-        fetching:    ['spin', 'Fetching info…'],
-        ready:       ['ok',   item.videoQual ? `${item.videoQual} · ${item.audioBitrate}kbps — ready` : 'Ready'],
-        downloading: ['spin', item.progText || 'Downloading…'],
-        done:        ['ok',   '✓ .tar downloaded — go to ② Merge'],
-        error:       ['err',  item.errorMsg || 'Error'],
-        active:      ['spin', item.progText || 'Working…'],
-      };
-      const [sc, st] = statusMap[item.state] || ['wait',''];
+        if (!rows.length) throw new Error('No downloadable formats found.');
 
-      let actions = '';
-      if (item.state === 'ready' || item.state === 'error') {
-        actions += `<button class="qbtn primary" onclick="processOne(${i})">↓ Download TAR</button>`;
+        rows.forEach(({ group, items }) => {
+          const gt = document.createElement('div');
+          gt.className = 'fmt-group-title';
+          gt.textContent = group;
+          fmtList.appendChild(gt);
+
+          items.forEach(f => {
+            const isAudio = f.mimeType?.includes('audio') && !f.mimeType?.includes('video');
+            const qual = isAudio
+              ? `${Math.round((f.averageBitrate||f.bitrate||0)/1000)}kbps`
+              : (f.qualityLabel || `${f.height}p`);
+            const codec = codecLabel(f.mimeType);
+            const container = containerLabel(f.mimeType);
+            const size = humanSize(f.contentLength);
+            const ext = container || (isAudio ? 'mp3' : 'mp4');
+            const filename = isAudio ? `audio_${qual}.${ext}` : `${d.title||'video'}_${qual}.${ext}`;
+
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem;';
+
+            const a = document.createElement('a');
+            a.className = 'fmt';
+            a.style.flex = '1';
+            a.href = f.url;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.download = filename;
+            a.innerHTML = `
+              <div class="fmt-left">
+                <span class="fmt-badge">${qual}</span>
+                <span class="fmt-codec">${codec} · ${ext.toUpperCase()}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:.6rem">
+                ${size ? `<span class="fmt-size">${size}</span>` : ''}
+                <span class="fmt-arrow">↓</span>
+              </div>
+            `;
+
+            // TAR button — only on video-only adaptive streams (need merging)
+            // and on combined formats (can still tar for convenience)
+            if (!isAudio) {
+              const tarBtn = document.createElement('button');
+              tarBtn.className = 'fmt-tar';
+              tarBtn.title = 'Download this video + best audio as a .tar, then drop it below to merge';
+              tarBtn.textContent = '📦 TAR';
+              tarBtn.onclick = () => downloadTar(f, window._lastAudioOnly || [], d.title || 'video');
+              row.appendChild(a);
+              row.appendChild(tarBtn);
+            } else {
+              row.appendChild(a);
+            }
+
+            fmtList.appendChild(row);
+          });
+        });
+
+        fmtsEl.style.display = 'block';
+        document.getElementById('merge-section').style.display = 'block';
+        addLog(`✓ Found formats — click one to download!`, 'ok');
+
+      } catch(e) {
+        sl.querySelector('.dot').className = 'dot d-err';
+        sl.querySelector('.log-text').textContent = `Error: ${e.message}`;
+        addLog('Make sure you subscribed to YTStream on RapidAPI (free plan).', 'info');
       }
-      if (!['active','downloading'].includes(item.state)) {
-        actions += `<button class="qbtn" onclick="removeItem(${i})">✕</button>`;
-      }
 
-      div.innerHTML = `
-        <div class="qitem-top">
-          ${thumbHtml}
-          <div class="qinfo">
-            <div class="qtitle">${item.title || item.url}</div>
-            <div class="qsub">${[item.channel, fmtTime(item.duration)].filter(Boolean).join(' · ')}</div>
-            <div class="qstatus ${sc}">${st}</div>
-          </div>
-          <div class="qactions">${actions}</div>
-        </div>
-        <div class="qprog" id="qp-${item.id}" style="display:${['downloading','active'].includes(item.state)?'block':'none'}">
-          <div class="qprog-bar-bg"><div class="qprog-fill" id="qpf-${item.id}" style="width:${item.pct||0}%"></div></div>
-          <div class="qprog-sub" id="qps-${item.id}">${item.progSub||''}</div>
-        </div>
-      `;
-      el.appendChild(div);
+      goBtn.disabled = false;
+    }
+
+    document.getElementById('url').addEventListener('keydown', e => {
+      if (e.key === 'Enter') go();
     });
 
-    const hasReady   = queue.some(i => i.state === 'ready');
-    const hasPending = queue.some(i => ['ready'].includes(i.state));
-    document.getElementById('process-all-wrap').style.display = hasPending && queue.length > 1 ? 'block' : 'none';
-    document.getElementById('proc-btn').disabled = processing || !hasReady;
-  }
-
-  function updateItemProg(id, pct, text, sub) {
-    const fill  = document.getElementById(`qpf-${id}`);
-    const subEl = document.getElementById(`qps-${id}`);
-    if (fill)  fill.style.width = pct + '%';
-    if (subEl && sub !== undefined) subEl.textContent = sub;
-    const item = queue.find(i=>i.id===id);
-    if (item) {
-      item.pct = pct; item.progText = text; item.progSub = sub;
-      const statusEl = document.querySelector(`#qi-${id} .qstatus`);
-      if (statusEl) statusEl.textContent = text;
-      const progWrap = document.getElementById(`qp-${id}`);
-      if (progWrap) progWrap.style.display = 'block';
+    // ── TAR builder ──────────────────────────────────────────────────────────
+    function buildTar(files) {
+      const blocks = [];
+      for (const {name, data} of files) {
+        const header = new Uint8Array(512);
+        const enc = new TextEncoder();
+        header.set(enc.encode(name.slice(0,100)), 0);
+        header.set(enc.encode('0000644\0'), 100);
+        header.set(enc.encode('0000000\0'), 108);
+        header.set(enc.encode('0000000\0'), 116);
+        header.set(enc.encode(data.length.toString(8).padStart(11,'0') + ' '), 124);
+        header.set(enc.encode(Math.floor(Date.now()/1000).toString(8).padStart(11,'0') + ' '), 136);
+        header[156] = 48;
+        header.set(enc.encode('ustar  \0'), 257);
+        let sum = 0;
+        for (let i = 0; i < 512; i++) sum += (i>=148&&i<156) ? 32 : header[i];
+        header.set(enc.encode(sum.toString(8).padStart(6,'0') + '\0 '), 148);
+        blocks.push(header);
+        const padded = new Uint8Array(Math.ceil(data.length/512)*512);
+        padded.set(data);
+        blocks.push(padded);
+      }
+      blocks.push(new Uint8Array(1024));
+      const total = blocks.reduce((a,b)=>a+b.length,0);
+      const out = new Uint8Array(total); let off = 0;
+      for (const b of blocks) { out.set(b, off); off += b.length; }
+      return out;
     }
-  }
 
-  // ── Add to queue ───────────────────────────────────────────────────────────
-  async function addToQueue() {
-    const raw = document.getElementById('url').value.trim();
-    if (!raw) return;
-    const id = extractId(raw);
-    if (!id) { alert('Could not find a YouTube video ID in that URL.'); return; }
-    document.getElementById('url').value = '';
+    // ── TAR parser ───────────────────────────────────────────────────────────
+    function parseTar(buffer) {
+      const data = new Uint8Array(buffer);
+      const dec  = new TextDecoder();
+      const files = {}; let pos = 0;
+      while (pos + 512 <= data.length) {
+        const hdr  = data.slice(pos, pos+512);
+        if (hdr.every(b=>b===0)) break;
+        const name = dec.decode(hdr.slice(0,100)).replace(/\0/g,'').trim();
+        const size = parseInt(dec.decode(hdr.slice(124,136)).replace(/\0/g,'').trim(), 8) || 0;
+        pos += 512;
+        if (name && size > 0) files[name] = data.slice(pos, pos+size);
+        pos += Math.ceil(size/512)*512;
+      }
+      return files;
+    }
 
-    const item = {
-      id: nextId++, url: raw, ytId: id,
-      state: 'fetching', title: id, channel: '', duration: 0,
-      thumbUrl: null, videoUrl: null, audioUrl: null,
-      videoExt: 'mp4', audioExt: 'mp4',
-      videoQual: null, audioBitrate: null,
-      pct: 0, progText: '', progSub: '', errorMsg: '',
-    };
-    queue.push(item);
-    renderQueue();
+    // ── fetchBytes with progress ─────────────────────────────────────────────
+    async function fetchBytes(url, onProgress) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const total = parseInt(res.headers.get('content-length')||'0');
+      const reader = res.body.getReader();
+      const chunks = []; let got = 0;
+      while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        chunks.push(value); got += value.length;
+        if (total && onProgress) onProgress(got/total);
+      }
+      const out = new Uint8Array(got); let off = 0;
+      for (const c of chunks) { out.set(c, off); off += c.length; }
+      return out;
+    }
 
-    try {
-      const res = await fetch(`https://${HOST}/dl?id=${id}`, {
-        headers: { 'x-rapidapi-key': KEY, 'x-rapidapi-host': HOST }
+    // ── Download TAR ─────────────────────────────────────────────────────────
+    async function downloadTar(videoFormat, audioOnlyArr, title) {
+      // Disable all TAR buttons while running
+      document.querySelectorAll('.fmt-tar').forEach(b => b.disabled = true);
+
+      const safe = (title||'video').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_') || 'video';
+
+      // Pick best audio (highest bitrate, prefer AAC)
+      const audios = [...audioOnlyArr].sort((a,b)=>
+        (parseInt(b.averageBitrate||b.bitrate)||0)-(parseInt(a.averageBitrate||a.bitrate)||0));
+      const bestAudio = audios.find(f=>f.mimeType?.includes('mp4a')) || audios[0];
+      if (!bestAudio) { alert('No audio stream found.'); document.querySelectorAll('.fmt-tar').forEach(b=>b.disabled=false); return; }
+
+      const vExt = videoFormat.mimeType?.includes('webm') ? 'webm' : 'mp4';
+      const aExt = bestAudio.mimeType?.includes('webm') ? 'webm' : 'mp4';
+
+      // Show progress in log
+      logEl.style.display = 'block';
+      const vl = addLog('Fetching video stream…', 'spin');
+
+      try {
+        const videoBytes = await fetchBytes(videoFormat.url, r => {
+          vl.querySelector('.log-text').textContent = `Fetching video… ${Math.round(r*100)}%`;
+        });
+        vl.querySelector('.dot').className = 'dot d-ok';
+        vl.querySelector('.log-text').textContent = `✓ Video fetched (${(videoBytes.length/1024/1024).toFixed(1)} MB)`;
+        vl.querySelector('.log-text').classList.add('hi');
+
+        const al = addLog('Fetching audio stream…', 'spin');
+        const audioBytes = await fetchBytes(bestAudio.url, r => {
+          al.querySelector('.log-text').textContent = `Fetching audio… ${Math.round(r*100)}%`;
+        });
+        al.querySelector('.dot').className = 'dot d-ok';
+        al.querySelector('.log-text').textContent = `✓ Audio fetched (${(audioBytes.length/1024/1024).toFixed(1)} MB)`;
+        al.querySelector('.log-text').classList.add('hi');
+
+        addLog('Building .tar…', 'spin');
+        const tarBytes = buildTar([
+          { name: `${safe}__video.${vExt}`, data: videoBytes },
+          { name: `${safe}__audio.${aExt}`, data: audioBytes },
+          { name: 'meta.txt',                data: new TextEncoder().encode(title) },
+        ]);
+
+        const blob = new Blob([tarBytes], { type:'application/x-tar' });
+        const url  = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `${safe}_streams.tar`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(()=>URL.revokeObjectURL(url), 20000);
+
+        addLog(`✓ Downloaded ${safe}_streams.tar — now drop it in the merge box below!`, 'ok');
+
+      } catch(e) {
+        addLog(`Error: ${e.message}`, 'err');
+      }
+
+      document.querySelectorAll('.fmt-tar').forEach(b => b.disabled = false);
+    }
+
+    // ── Merge drop zone ──────────────────────────────────────────────────────
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault(); dropZone.classList.remove('drag-over');
+      const f = e.dataTransfer.files[0];
+      if (f) handleTar(f);
+    });
+
+    function mlog(msg, type='info') {
+      const el = document.getElementById('merge-log');
+      el.style.display = 'block';
+      const dc = {spin:'spin',ok:'ok',err:'err'}[type]||'ok';
+      const line = document.createElement('div');
+      line.className = 'mlog-line';
+      line.innerHTML = `<div class="mdot ${dc}"></div><div style="line-height:1.5;color:${type==='err'?'var(--red)':type==='spin'?'var(--accent)':'#4ade80'}">${msg}</div>`;
+      el.appendChild(line);
+      return line;
+    }
+    function setMprog(pct, lbl) {
+      document.getElementById('merge-prog').style.display = 'block';
+      document.getElementById('mprog-fill').style.width = pct + '%';
+      if (lbl) document.getElementById('mprog-lbl').textContent = lbl;
+    }
+
+    async function handleTar(file) {
+      document.getElementById('merge-log').innerHTML = '';
+      document.getElementById('merge-log').style.display = 'none';
+      document.getElementById('merge-prog').style.display = 'none';
+
+      const l1 = mlog(`Reading ${file.name}…`, 'spin');
+      setMprog(5, 'Reading .tar…');
+
+      try {
+        const buf   = await file.arrayBuffer();
+        const files = parseTar(buf);
+        const names = Object.keys(files);
+
+        const videoName = names.find(n => n.includes('__video'));
+        const audioName = names.find(n => n.includes('__audio'));
+        const metaName  = names.find(n => n === 'meta.txt');
+        if (!videoName) throw new Error('No video stream found in .tar');
+        if (!audioName) throw new Error('No audio stream found in .tar');
+
+        const title = metaName ? new TextDecoder().decode(files[metaName]) : 'video';
+        l1.querySelector('.mdot').className = 'mdot ok';
+        l1.querySelector('div:last-child').textContent = `Parsed — found video + audio`;
+
+        mlog(`Video: ${videoName}`, 'ok');
+        mlog(`Audio: ${audioName}`, 'ok');
+        setMprog(20, 'Muxing with MP4Box.js…');
+
+        const ml = mlog('Muxing streams…', 'spin');
+        const outBytes = await muxMP4(files[videoName], files[audioName]);
+        ml.querySelector('.mdot').className = 'mdot ok';
+        ml.querySelector('div:last-child').textContent = '✓ Mux complete';
+
+        setMprog(95, 'Downloading…');
+        const safe  = title.replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_') || 'video';
+        const fname = safe + '_merged.mp4';
+        const blob  = new Blob([outBytes], { type:'video/mp4' });
+        const burl  = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = burl; a.download = fname;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(()=>URL.revokeObjectURL(burl), 20000);
+
+        setMprog(100, '✓ Done!');
+        mlog(`✓ Saved as ${fname}`, 'ok');
+
+      } catch(e) {
+        setMprog(0, 'Error');
+        mlog(`Error: ${e.message}`, 'err');
+      }
+    }
+
+    // ── MP4Box mux ───────────────────────────────────────────────────────────
+    function muxMP4(videoBytes, audioBytes) {
+      return new Promise((resolve, reject) => {
+        try {
+          const vFile = MP4Box.createFile();
+          const aFile = MP4Box.createFile();
+          let vInfo = null, aInfo = null;
+          let vSamples = [], aSamples = [];
+          let vDone = false, aDone = false;
+
+          function finish() {
+            if (!vDone || !aDone) return;
+            try {
+              const out  = MP4Box.createFile();
+              const vTrk = vInfo.tracks[0];
+              const aTrk = aInfo.tracks[0];
+              const vTid = out.addTrack({
+                id:1, type:'video', timescale:vTrk.timescale,
+                width:  vTrk.video ? vTrk.video.width  : 1920,
+                height: vTrk.video ? vTrk.video.height : 1080,
+                hdlr:'vide', name:'VideoHandler',
+                description: vFile.moov.traks[0].mdia.minf.stbl.stsd.entries[0],
+              });
+              const aTid = out.addTrack({
+                id:2, type:'audio', timescale:aTrk.timescale,
+                samplerate:    aTrk.audio ? aTrk.audio.sample_rate   : 44100,
+                channel_count: aTrk.audio ? aTrk.audio.channel_count : 2,
+                hdlr:'soun', name:'SoundHandler',
+                description: aFile.moov.traks[0].mdia.minf.stbl.stsd.entries[0],
+              });
+              for (const s of vSamples) out.addSample(vTid, s.data, {duration:s.duration,cts:s.cts,dts:s.dts,is_sync:s.is_sync});
+              for (const s of aSamples) out.addSample(aTid, s.data, {duration:s.duration,cts:s.cts,dts:s.dts,is_sync:s.is_sync});
+              const ds = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
+              out.save(ds);
+              resolve(new Uint8Array(ds.buffer));
+            } catch(e) { reject(e); }
+          }
+
+          vFile.onReady = info => { vInfo=info; vFile.setExtractionOptions(info.tracks[0].id,null,{nbSamples:Infinity}); vFile.start(); };
+          vFile.onSamples = (id,u,s) => vSamples.push(...s);
+          vFile.onFlush   = () => { vDone=true; finish(); };
+          vFile.onError   = reject;
+          aFile.onReady = info => { aInfo=info; aFile.setExtractionOptions(info.tracks[0].id,null,{nbSamples:Infinity}); aFile.start(); };
+          aFile.onSamples = (id,u,s) => aSamples.push(...s);
+          aFile.onFlush   = () => { aDone=true; finish(); };
+          aFile.onError   = reject;
+
+          const vBuf = videoBytes.buffer.slice(0); vBuf.fileStart=0;
+          const aBuf = audioBytes.buffer.slice(0); aBuf.fileStart=0;
+          vFile.appendBuffer(vBuf); vFile.flush();
+          aFile.appendBuffer(aBuf); aFile.flush();
+        } catch(e) { reject(e); }
       });
-      if (res.status === 429) throw new Error('Rate-limited — wait a minute.');
-      if (res.status === 403) throw new Error('API key error (check RapidAPI).');
-      if (!res.ok) throw new Error(`API error ${res.status}`);
-      const d = await res.json();
-      if (d.status && d.status !== 'OK') throw new Error(`API: ${d.status}`);
-
-      item.title    = d.title || id;
-      item.channel  = d.channelTitle || '';
-      item.duration = parseInt(d.lengthSeconds) || 0;
-
-      const rawThumbs = d.thumbnail;
-      const thumbArr  = Array.isArray(rawThumbs) ? rawThumbs : rawThumbs ? Object.values(rawThumbs) : [];
-      const sorted    = [...thumbArr].sort((a,b)=>((b.width||0)*(b.height||0))-((a.width||0)*(a.height||0)));
-      item.thumbUrl   = sorted[0]?.url || `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
-
-      const adaptive = toArr(d.adaptiveFormats);
-      const vs = pickVideo(adaptive);
-      const as = pickAudio(adaptive);
-      if (!vs) throw new Error('No video stream found.');
-      if (!as) throw new Error('No audio stream found.');
-
-      item.videoUrl     = vs.url;
-      item.audioUrl     = as.url;
-      item.videoExt     = vs.mimeType?.includes('webm') ? 'webm' : 'mp4';
-      item.audioExt     = as.mimeType?.includes('webm') ? 'webm' : 'mp4';
-      item.videoQual    = vs.qualityLabel || `${vs.height}p`;
-      item.audioBitrate = Math.round((as.averageBitrate||as.bitrate||0)/1000);
-      item.state        = 'ready';
-
-    } catch(e) {
-      item.state    = 'error';
-      item.errorMsg = e.message;
     }
-    renderQueue();
-  }
-
-  // ── Process one: fetch streams → bundle as .tar ────────────────────────────
-  async function processOne(idx) {
-    const item = queue[idx];
-    if (!item || ['active','downloading'].includes(item.state)) return;
-    processing = true;
-    item.state = 'active'; item.pct = 0; item.progText = 'Starting…';
-    renderQueue();
-
-    try {
-      item.state = 'downloading';
-
-      updateItemProg(item.id, 5, 'Fetching video stream…', 'This is the big one');
-      const videoBytes = await fetchBytes(item.videoUrl, r => {
-        updateItemProg(item.id, 5+Math.round(r*50), 'Fetching video…', `${Math.round(r*100)}% · ${(r * /* rough */ 1).toFixed(0)}`);
-        updateItemProg(item.id, 5+Math.round(r*50), 'Fetching video…', `${Math.round(r*100)}%`);
-      });
-
-      updateItemProg(item.id, 57, 'Fetching audio stream…', '');
-      const audioBytes = await fetchBytes(item.audioUrl, r => {
-        updateItemProg(item.id, 57+Math.round(r*25), 'Fetching audio…', `${Math.round(r*100)}%`);
-      });
-
-      updateItemProg(item.id, 84, 'Building .tar bundle…', '');
-
-      const safe = safeFilename(item.title);
-      const tarBytes = buildTar([
-        { name: `${safe}__video.${item.videoExt}`, data: videoBytes },
-        { name: `${safe}__audio.${item.audioExt}`, data: audioBytes },
-        // Embed metadata as a tiny text file so the merge step knows the title
-        { name: 'meta.txt', data: new TextEncoder().encode(item.title) },
-      ]);
-
-      updateItemProg(item.id, 96, 'Triggering download…', '');
-
-      const blob    = new Blob([tarBytes], { type: 'application/x-tar' });
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl; a.download = `${safe}_streams.tar`;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 20000);
-
-      updateItemProg(item.id, 100, `✓ Downloaded ${safe}_streams.tar`, '');
-      item.state = 'done';
-
-    } catch(e) {
-      item.state    = 'error';
-      item.errorMsg = e.message;
-      item.progText = '';
-    }
-
-    processing = false;
-    renderQueue();
-  }
-
-  async function processAll() {
-    for (let i = 0; i < queue.length; i++) {
-      if (queue[i].state === 'ready') await processOne(i);
-    }
-  }
-
-  function removeItem(idx) {
-    queue.splice(idx, 1);
-    renderQueue();
-  }
-
-  document.getElementById('url').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addToQueue();
-  });
-
-  // ── Merge panel ────────────────────────────────────────────────────────────
-  const dropZone = document.getElementById('drop-zone');
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file) handleTarFile(file);
-  });
-
-  function mlog(msg, type='info') {
-    const el = document.getElementById('merge-log');
-    el.style.display = 'block';
-    const dc = { spin:'spin', ok:'ok', err:'err', info:'info' }[type] || 'info';
-    const line = document.createElement('div');
-    line.className = 'mlog-line';
-    line.innerHTML = `<div class="mdot ${dc}"></div><div class="mlog-text ${type==='ok'||type==='spin'?'hi':''}">${msg}</div>`;
-    el.appendChild(line);
-    return line;
-  }
-  function mlogUpdate(el, msg, type) {
-    el.querySelector('.mdot').className = `mdot ${ {spin:'spin',ok:'ok',err:'err',info:'info'}[type]||'info' }`;
-    const lt = el.querySelector('.mlog-text');
-    lt.textContent = msg;
-    if (type==='ok') lt.classList.add('hi'); else lt.classList.remove('hi');
-  }
-  function setMprog(pct, label) {
-    const wrap = document.getElementById('merge-prog-wrap');
-    wrap.style.display = 'block';
-    document.getElementById('mprog-fill').style.width = pct + '%';
-    if (label) document.getElementById('mprog-label').textContent = label;
-  }
-
-  async function handleTarFile(file) {
-    if (!file) return;
-    // Reset log
-    document.getElementById('merge-log').innerHTML = '';
-    document.getElementById('merge-log').style.display = 'none';
-    document.getElementById('merge-prog-wrap').style.display = 'none';
-
-    const l1 = mlog(`Reading ${file.name}…`, 'spin');
-    setMprog(5, 'Reading .tar…');
-
-    try {
-      const buffer = await file.arrayBuffer();
-      const files  = parseTar(buffer);
-      const names  = Object.keys(files);
-
-      mlogUpdate(l1, `Parsed .tar — found ${names.length} files`, 'ok');
-      setMprog(15, 'Identifying streams…');
-
-      // Find video and audio files
-      const videoFile = names.find(n => n.includes('__video'));
-      const audioFile = names.find(n => n.includes('__audio'));
-      const metaFile  = names.find(n => n === 'meta.txt');
-
-      if (!videoFile) throw new Error('No video stream found in .tar (expected a file with "__video" in the name)');
-      if (!audioFile) throw new Error('No audio stream found in .tar (expected a file with "__audio" in the name)');
-
-      const title = metaFile ? new TextDecoder().decode(files[metaFile]) : 'video';
-
-      mlog(`✓ Video: ${videoFile}`, 'ok');
-      mlog(`✓ Audio: ${audioFile}`, 'ok');
-      setMprog(25, 'Muxing streams…');
-
-      const ml = mlog('Muxing with MP4Box.js…', 'spin');
-
-      const outBytes = await muxMP4(files[videoFile], files[audioFile]);
-
-      mlogUpdate(ml, '✓ Mux complete', 'ok');
-      setMprog(95, 'Preparing download…');
-
-      const fname   = safeFilename(title) + '_1080p.mp4';
-      const blob    = new Blob([outBytes], { type: 'video/mp4' });
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl; a.download = fname;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 20000);
-
-      setMprog(100, '✓ Done!');
-      mlog(`✓ Saved as ${fname}`, 'ok');
-
-    } catch(e) {
-      setMprog(0, 'Error');
-      mlog(`Error: ${e.message}`, 'err');
-    }
-  }
   </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js"></script>
 </body>
 </html>
