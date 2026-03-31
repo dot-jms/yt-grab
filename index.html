@@ -7,58 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
 
-  <!--
-    coi-serviceworker: injects Cross-Origin-Opener-Policy + Cross-Origin-Embedder-Policy
-    headers via a service worker so SharedArrayBuffer is available on any static host
-    (GitHub Pages, Netlify, etc.) without server config changes.
-    Source: https://github.com/gzuidhof/coi-serviceworker
-  -->
-  <script>
-    // Inline coi-serviceworker so no extra file is needed
-    (() => {
-      if (typeof window === 'undefined') return;
-      const coi = `
-self.addEventListener("install",()=>self.skipWaiting());
-self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));
-function setCOI(headers){
-  const h=new Headers(headers);
-  h.set("Cross-Origin-Opener-Policy","same-origin");
-  h.set("Cross-Origin-Embedder-Policy","require-corp");
-  return h;
-}
-self.addEventListener("fetch",e=>{
-  if(e.request.cache==="only-if-cached"&&e.request.mode!=="same-origin")return;
-  e.respondWith(
-    fetch(e.request).then(r=>{
-      if(r.status===0)return r;
-      const newHeaders=setCOI(r.headers);
-      return new Response(r.body,{status:r.status,statusText:r.statusText,headers:newHeaders});
-    })
-  );
-});
-      `;
-      if (!window.crossOriginIsolated) {
-        if ('serviceWorker' in navigator) {
-          const blob = new Blob([coi], { type: 'text/javascript' });
-          const url  = URL.createObjectURL(blob);
-          navigator.serviceWorker.register(url, { scope: './' }).then(reg => {
-            // If we just registered for the first time, reload so the SW takes effect
-            if (!reg.active) {
-              reg.addEventListener('updatefound', () => {
-                reg.installing?.addEventListener('statechange', e => {
-                  if (e.target.state === 'activated') location.reload();
-                });
-              });
-            }
-          });
-          // If SW was already waiting/active from a previous load, reload immediately
-          navigator.serviceWorker.ready.then(() => {
-            if (!window.crossOriginIsolated) location.reload();
-          });
-        }
-      }
-    })();
-  </script>
+
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -160,8 +109,7 @@ self.addEventListener("fetch",e=>{
     footer a { color:#3a3a3a; text-decoration:none; }
     footer a:hover { color:var(--accent); }
 
-    #coi-banner { display:none; background:#001a30; border:1px solid #003060; border-radius:var(--r); padding:.65rem .9rem; margin-bottom:1rem; font-size:.67rem; color:#4a90d9; line-height:1.6; }
-    #coi-banner strong { color:#60b0ff; }
+
   </style>
 </head>
 <body>
@@ -177,9 +125,7 @@ self.addEventListener("fetch",e=>{
     </header>
 
     <div class="card">
-      <div id="coi-banner">
-        <strong>⟳ Reloading…</strong> Setting up cross-origin isolation (required for FFmpeg.wasm). Page will reload once.
-      </div>
+
       <div class="notice">
         <strong>⚠</strong> Only download content you have rights to — Creative Commons, public domain, or your own videos.<br/>
         <strong>ℹ</strong> FFmpeg merging runs entirely in your browser. No data leaves your device.
@@ -206,24 +152,16 @@ self.addEventListener("fetch",e=>{
     </footer>
   </div>
 
-  <!-- ffmpeg.wasm v0.12 via jsDelivr -->
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+  <!-- ffmpeg.wasm v0.11.6 — runs on main thread, no Web Workers, no SAB needed -->
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 
   <script>
-  // ─────────────────────────────────────────────────────────────────────────────
-  // COI check
-  // ─────────────────────────────────────────────────────────────────────────────
-  if (!window.crossOriginIsolated) {
-    document.getElementById('coi-banner').style.display = 'block';
-  }
-
   // ─────────────────────────────────────────────────────────────────────────────
   // Config
   // ─────────────────────────────────────────────────────────────────────────────
   const KEY  = '84ff588c9bmsh25a213355c21977p1c6997jsnf9a1fe621e32';
   const HOST = 'ytstream-download-youtube-videos.p.rapidapi.com';
-  const CORE_BASE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+  const FFMPEG_CORE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js';
 
   // ─────────────────────────────────────────────────────────────────────────────
   // State
@@ -282,17 +220,16 @@ self.addEventListener("fetch",e=>{
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // FFmpeg init
+  // FFmpeg init — v0.11 createFFmpeg runs on main thread, no Workers needed
   // ─────────────────────────────────────────────────────────────────────────────
   async function initFF() {
     if (ffReady) return ffInst;
-    const { FFmpeg } = FFmpegWASM;
-    const { toBlobURL } = FFmpegUtil;
-    const ff = new FFmpeg();
-    await ff.load({
-      coreURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`,   'text/javascript'),
-      wasmURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, 'application/wasm'),
+    const { createFFmpeg } = FFmpeg; // global from ffmpeg.min.js
+    const ff = createFFmpeg({
+      corePath: FFMPEG_CORE,
+      log: false,
     });
+    await ff.load();
     ffInst = ff; ffReady = true;
     return ff;
   }
@@ -491,13 +428,7 @@ self.addEventListener("fetch",e=>{
     renderQueue();
 
     try {
-      if (!window.crossOriginIsolated) {
-        throw new Error('SharedArrayBuffer not available. The page needs to reload to activate cross-origin isolation. Please reload and try again.');
-      }
-
-      const { fetchFile, toBlobURL } = FFmpegUtil;
-
-      updateItemProg(item.id, 5, 'Loading FFmpeg WASM…', 'First load ~10 MB, cached after');
+      updateItemProg(item.id, 5, 'Loading FFmpeg WASM…', 'First load ~20 MB, cached after');
       const ff = await initFF();
 
       // Video fetch
@@ -514,29 +445,32 @@ self.addEventListener("fetch",e=>{
       });
 
       updateItemProg(item.id, 62, 'Writing files…', '');
-      await ff.writeFile(`v_${item.id}.${item.videoExt}`, videoBytes);
-      await ff.writeFile(`a_${item.id}.${item.audioExt}`, audioBytes);
+      ff.FS('writeFile', `v_${item.id}.${item.videoExt}`, videoBytes);
+      ff.FS('writeFile', `a_${item.id}.${item.audioExt}`, audioBytes);
 
-      // Mux with progress
+      // Mux
       item.state = 'muxing';
       updateItemProg(item.id, 65, 'Muxing…', 'Stream copy — no re-encode');
 
-      ff.on('progress', ({ progress }) => {
-        const p = Math.round(progress * 100);
-        updateItemProg(item.id, 65+Math.round(progress*28), `Muxing… ${p}%`, '');
+      // 0.11 progress callback via setProgress
+      ff.setProgress(({ ratio }) => {
+        if (ratio >= 0) {
+          const p = Math.round(ratio * 100);
+          updateItemProg(item.id, 65+Math.round(ratio*28), `Muxing… ${p}%`, '');
+        }
       });
 
-      await ff.exec([
+      await ff.run(
         '-i', `v_${item.id}.${item.videoExt}`,
         '-i', `a_${item.id}.${item.audioExt}`,
         '-c', 'copy',
         '-movflags', '+faststart',
         '-shortest',
         `out_${item.id}.mp4`
-      ]);
+      );
 
       updateItemProg(item.id, 95, 'Reading output…', '');
-      const out = await ff.readFile(`out_${item.id}.mp4`);
+      const out = ff.FS('readFile', `out_${item.id}.mp4`);
       const blob = new Blob([out.buffer], { type: 'video/mp4' });
       const blobUrl = URL.createObjectURL(blob);
 
@@ -551,7 +485,7 @@ self.addEventListener("fetch",e=>{
 
       // Cleanup VFS
       for (const f of [`v_${item.id}.${item.videoExt}`, `a_${item.id}.${item.audioExt}`, `out_${item.id}.mp4`]) {
-        try { await ff.deleteFile(f); } catch {}
+        try { ff.FS('unlink', f); } catch {}
       }
 
     } catch(e) {
