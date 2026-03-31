@@ -6,19 +6,72 @@
   <title>yt-grab</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!--
+    coi-serviceworker: injects Cross-Origin-Opener-Policy + Cross-Origin-Embedder-Policy
+    headers via a service worker so SharedArrayBuffer is available on any static host
+    (GitHub Pages, Netlify, etc.) without server config changes.
+    Source: https://github.com/gzuidhof/coi-serviceworker
+  -->
+  <script>
+    // Inline coi-serviceworker so no extra file is needed
+    (() => {
+      if (typeof window === 'undefined') return;
+      const coi = `
+self.addEventListener("install",()=>self.skipWaiting());
+self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));
+function setCOI(headers){
+  const h=new Headers(headers);
+  h.set("Cross-Origin-Opener-Policy","same-origin");
+  h.set("Cross-Origin-Embedder-Policy","require-corp");
+  return h;
+}
+self.addEventListener("fetch",e=>{
+  if(e.request.cache==="only-if-cached"&&e.request.mode!=="same-origin")return;
+  e.respondWith(
+    fetch(e.request).then(r=>{
+      if(r.status===0)return r;
+      const newHeaders=setCOI(r.headers);
+      return new Response(r.body,{status:r.status,statusText:r.statusText,headers:newHeaders});
+    })
+  );
+});
+      `;
+      if (!window.crossOriginIsolated) {
+        if ('serviceWorker' in navigator) {
+          const blob = new Blob([coi], { type: 'text/javascript' });
+          const url  = URL.createObjectURL(blob);
+          navigator.serviceWorker.register(url, { scope: './' }).then(reg => {
+            // If we just registered for the first time, reload so the SW takes effect
+            if (!reg.active) {
+              reg.addEventListener('updatefound', () => {
+                reg.installing?.addEventListener('statechange', e => {
+                  if (e.target.state === 'activated') location.reload();
+                });
+              });
+            }
+          });
+          // If SW was already waiting/active from a previous load, reload immediately
+          navigator.serviceWorker.ready.then(() => {
+            if (!window.crossOriginIsolated) location.reload();
+          });
+        }
+      }
+    })();
+  </script>
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg: #0a0a0a; --surface: #111; --border: #222;
       --accent: #e8ff47; --red: #ff4747; --text: #f0f0f0;
-      --muted: #666; --r: 4px;
+      --muted: #666; --r: 4px; --green: #4ade80;
     }
     body {
       background: var(--bg); color: var(--text);
       font-family: 'Space Mono', monospace;
       min-height: 100vh; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 2rem; overflow-x: hidden;
+      align-items: center; padding: 2rem 2rem 4rem; overflow-x: hidden;
     }
     body::before {
       content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 100;
@@ -29,53 +82,86 @@
     .corner-tr { top:20px; right:20px; border-width:2px 2px 0 0; }
     .corner-bl { bottom:20px; left:20px; border-width:0 0 2px 2px; }
     .corner-br { bottom:20px; right:20px; border-width:0 2px 2px 0; }
-    .container { width:100%; max-width:660px; animation: up .5s ease both; }
+
+    .container { width:100%; max-width:700px; margin-top: 3rem; }
     @keyframes up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
-    header { margin-bottom: 2.5rem; }
+
+    header { margin-bottom: 2.5rem; animation: up .5s ease both; }
     .logo { font-family:'Syne',sans-serif; font-size:clamp(2.8rem,10vw,4.5rem); font-weight:800; line-height:.9; letter-spacing:-.03em; color:var(--accent); text-shadow:4px 4px 0 #2a3000; }
     .logo span { color:var(--text); }
     .tagline { margin-top:.6rem; color:var(--muted); font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; }
-    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:1.75rem; position:relative; }
+
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:1.75rem; position:relative; animation: up .5s .1s ease both; }
     .card::before { content:''; position:absolute; top:-1px;left:-1px;right:-1px; height:2px; background:linear-gradient(90deg,var(--accent),transparent); border-radius:var(--r) var(--r) 0 0; }
+
     .lbl { font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:.4rem; }
-    .row { display:flex; gap:.6rem; margin-bottom:1.25rem; }
+    .row { display:flex; gap:.6rem; margin-bottom:.75rem; }
     input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:var(--r); color:var(--text); font-family:'Space Mono',monospace; font-size:.8rem; padding:.7rem .9rem; outline:none; transition:border-color .2s; }
     input:focus { border-color:var(--accent); }
     input::placeholder { color:#2a2a2a; }
     .btn { background:var(--accent); border:none; border-radius:var(--r); color:#000; cursor:pointer; font-family:'Syne',sans-serif; font-size:.85rem; font-weight:800; letter-spacing:.04em; padding:.7rem 1.4rem; transition:transform .1s,box-shadow .1s; white-space:nowrap; }
     .btn:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(232,255,71,.3); }
-    .btn:active { transform:none; }
+    .btn:active { transform:none; box-shadow:none; }
     .btn:disabled { opacity:.35; cursor:not-allowed; transform:none; box-shadow:none; }
+    .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--muted); }
+    .btn-ghost:hover { border-color:var(--accent); color:var(--accent); box-shadow:none; }
+
     .notice { background:#161200; border:1px solid #302800; border-radius:var(--r); padding:.65rem .9rem; margin-bottom:1.25rem; font-size:.67rem; color:#776600; line-height:1.6; }
     .notice strong { color:var(--accent); }
-    #log { display:none; margin-top:1.25rem; border-top:1px solid var(--border); padding-top:1rem; }
-    .log-line { display:flex; gap:.5rem; align-items:flex-start; margin-bottom:.3rem; font-size:.72rem; animation:li .2s ease both; }
-    @keyframes li { from{opacity:0;transform:translateX(-4px)} to{opacity:1;transform:none} }
-    .dot { width:6px; height:6px; border-radius:50%; margin-top:.3rem; flex-shrink:0; }
-    .d-spin { background:var(--accent); animation:blink 1s infinite; }
-    .d-ok   { background:#4ade80; }
-    .d-err  { background:var(--red); }
-    .d-info { background:#60a5fa; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
-    .log-text { line-height:1.5; color:var(--muted); }
-    .log-text.hi { color:var(--text); }
-    #vinfo { display:none; margin-top:1rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--r); padding:.9rem; flex-direction:row; gap:.9rem; align-items:center; }
-    #vinfo img { width:100px; height:56px; object-fit:cover; border-radius:2px; flex-shrink:0; background:#1a1a1a; }
-    .vi-title { font-family:'Syne',sans-serif; font-size:.85rem; font-weight:700; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-    .vi-sub { font-size:.63rem; color:var(--muted); margin-top:.25rem; }
-    #progress-wrap { display:none; margin-top:1rem; }
-    .prog-label { font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.4rem; }
-    .prog-bar-bg { background:var(--bg); border:1px solid var(--border); border-radius:2px; height:6px; overflow:hidden; }
-    .prog-bar-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .4s ease; width:0%; }
-    .prog-sub { font-size:.62rem; color:var(--muted); margin-top:.3rem; word-break:break-all; min-height:1em; }
-    #dl-btn-wrap { display:none; margin-top:1.25rem; }
-    .dl-btn { display:flex; align-items:center; justify-content:center; gap:.6rem; width:100%; background:var(--accent); border:none; border-radius:var(--r); color:#000; cursor:pointer; font-family:'Syne',sans-serif; font-size:1rem; font-weight:800; letter-spacing:.04em; padding:.9rem 1.4rem; transition:transform .1s,box-shadow .1s; }
-    .dl-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(232,255,71,.4); }
-    .dl-btn:active { transform:none; }
-    .dl-btn:disabled { opacity:.35; cursor:not-allowed; transform:none; box-shadow:none; }
-    footer { margin-top:2rem; font-size:.62rem; color:var(--muted); text-align:center; line-height:1.9; }
+
+    /* ── Queue ── */
+    #queue { margin-top: 1.5rem; display: flex; flex-direction: column; gap: .75rem; }
+    .qitem {
+      background: var(--bg); border: 1px solid var(--border); border-radius: var(--r);
+      overflow: hidden; animation: up .25s ease both;
+      transition: border-color .2s;
+    }
+    .qitem.active  { border-color: var(--accent); }
+    .qitem.done    { border-color: #1a3a1a; }
+    .qitem.error   { border-color: #3a1a1a; }
+
+    .qitem-top { display:flex; gap:.75rem; align-items:center; padding:.75rem; }
+    .qthumb { width:88px; height:50px; object-fit:cover; border-radius:2px; background:#1a1a1a; flex-shrink:0; }
+    .qthumb-placeholder { width:88px; height:50px; background:#1a1a1a; border-radius:2px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#333; font-size:1.2rem; }
+    .qinfo { flex:1; min-width:0; }
+    .qtitle { font-family:'Syne',sans-serif; font-size:.82rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .qsub   { font-size:.62rem; color:var(--muted); margin-top:.15rem; }
+    .qstatus { font-size:.62rem; margin-top:.2rem; }
+    .qstatus.spin { color:var(--accent); }
+    .qstatus.ok   { color:var(--green); }
+    .qstatus.err  { color:var(--red); }
+    .qstatus.wait { color:#444; }
+
+    .qactions { display:flex; gap:.4rem; flex-shrink:0; flex-wrap: wrap; justify-content: flex-end; }
+    .qbtn { background:transparent; border:1px solid var(--border); border-radius:var(--r); color:var(--muted); cursor:pointer; font-family:'Syne',sans-serif; font-size:.65rem; font-weight:800; padding:.3rem .6rem; transition:all .15s; white-space:nowrap; }
+    .qbtn:hover { border-color:var(--accent); color:var(--accent); }
+    .qbtn.primary { background:var(--accent); border-color:var(--accent); color:#000; }
+    .qbtn.primary:hover { box-shadow:0 2px 10px rgba(232,255,71,.35); }
+    .qbtn:disabled { opacity:.3; cursor:not-allowed; }
+
+    /* progress bar inside queue item */
+    .qprog { padding: 0 .75rem .65rem; display:none; }
+    .qprog-bar-bg { background:#1a1a1a; border-radius:2px; height:4px; overflow:hidden; }
+    .qprog-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .35s ease; width:0%; }
+    .qprog-sub { font-size:.6rem; color:var(--muted); margin-top:.3rem; }
+
+    /* thumbnail row */
+    .qthumb-dl { display:none; padding: 0 .75rem .65rem; gap:.5rem; align-items:center; }
+    .qthumb-dl img { width:120px; height:68px; object-fit:cover; border-radius:2px; border:1px solid var(--border); }
+    .qthumb-dl-btns { display:flex; flex-direction:column; gap:.3rem; }
+
+    /* process-all bar */
+    #process-all-wrap { display:none; margin-top:1rem; }
+    .proc-btn { display:flex; align-items:center; justify-content:center; gap:.5rem; width:100%; background:var(--accent); border:none; border-radius:var(--r); color:#000; cursor:pointer; font-family:'Syne',sans-serif; font-size:.95rem; font-weight:800; letter-spacing:.04em; padding:.85rem; transition:transform .1s,box-shadow .1s; }
+    .proc-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(232,255,71,.35); }
+    .proc-btn:disabled { opacity:.35; cursor:not-allowed; transform:none; box-shadow:none; }
+
+    footer { margin-top:2.5rem; font-size:.62rem; color:var(--muted); text-align:center; line-height:1.9; animation: up .5s .2s ease both; }
     footer a { color:#3a3a3a; text-decoration:none; }
     footer a:hover { color:var(--accent); }
+
+    #coi-banner { display:none; background:#001a30; border:1px solid #003060; border-radius:var(--r); padding:.65rem .9rem; margin-bottom:1rem; font-size:.67rem; color:#4a90d9; line-height:1.6; }
+    #coi-banner strong { color:#60b0ff; }
   </style>
 </head>
 <body>
@@ -87,301 +173,451 @@
   <div class="container">
     <header>
       <div class="logo">yt<span>-</span>grab</div>
-      <div class="tagline">1080p + best audio · auto-merged · powered by YTStream</div>
+      <div class="tagline">1080p + best audio · auto-merged · queue multiple videos</div>
     </header>
 
     <div class="card">
+      <div id="coi-banner">
+        <strong>⟳ Reloading…</strong> Setting up cross-origin isolation (required for FFmpeg.wasm). Page will reload once.
+      </div>
       <div class="notice">
         <strong>⚠</strong> Only download content you have rights to — Creative Commons, public domain, or your own videos.<br/>
-        <strong>ℹ</strong> Merging runs entirely in your browser via FFmpeg.wasm. No data leaves your device.
+        <strong>ℹ</strong> FFmpeg merging runs entirely in your browser. No data leaves your device.
       </div>
 
-      <div class="lbl">YouTube URL</div>
+      <div class="lbl">Add YouTube URL to queue</div>
       <div class="row">
         <input type="text" id="url" placeholder="https://www.youtube.com/watch?v=..." />
-        <button class="btn" id="go" onclick="go()">GO</button>
+        <button class="btn" id="add-btn" onclick="addToQueue()">ADD</button>
       </div>
 
-      <div id="log"></div>
-
-      <div id="vinfo">
-        <img id="vthumb" src="" alt="" />
-        <div>
-          <div class="vi-title" id="vtitle"></div>
-          <div class="vi-sub" id="vsub"></div>
-        </div>
+      <div id="process-all-wrap">
+        <button class="proc-btn" id="proc-btn" onclick="processAll()">↓ Download All (merged 1080p)</button>
       </div>
 
-      <div id="progress-wrap">
-        <div class="prog-label" id="prog-label">Loading…</div>
-        <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-bar"></div></div>
-        <div class="prog-sub" id="prog-sub"></div>
-      </div>
-
-      <div id="dl-btn-wrap">
-        <button class="dl-btn" id="dl-btn">↓ Download 1080p + Best Audio (merged)</button>
-      </div>
+      <div id="queue"></div>
     </div>
 
     <footer>
       powered by <a href="https://rapidapi.com/ytjar/api/ytstream-download-youtube-videos" target="_blank">YTStream</a> via RapidAPI ·
       merged with <a href="https://ffmpegwasm.netlify.app/" target="_blank">FFmpeg.wasm</a> ·
-      no tracking · no server<br/>
+      thumbnails via YouTube · no tracking · no server<br/>
       only download content you have rights to
     </footer>
   </div>
 
-  <!--
-    ffmpeg.wasm v0.11.x — uses createFFmpeg() which runs on the MAIN THREAD.
-    No Web Workers, no SharedArrayBuffer, no COOP/COEP headers needed.
-    Works fine on GitHub Pages and any static host.
-  -->
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+  <!-- ffmpeg.wasm v0.12 via jsDelivr -->
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
 
   <script>
-    const KEY  = '84ff588c9bmsh25a213355c21977p1c6997jsnf9a1fe621e32';
-    const HOST = 'ytstream-download-youtube-videos.p.rapidapi.com';
+  // ─────────────────────────────────────────────────────────────────────────────
+  // COI check
+  // ─────────────────────────────────────────────────────────────────────────────
+  if (!window.crossOriginIsolated) {
+    document.getElementById('coi-banner').style.display = 'block';
+  }
 
-    const logEl        = document.getElementById('log');
-    const vinfoEl      = document.getElementById('vinfo');
-    const progressWrap = document.getElementById('progress-wrap');
-    const progBar      = document.getElementById('prog-bar');
-    const progLabel    = document.getElementById('prog-label');
-    const progSub      = document.getElementById('prog-sub');
-    const dlBtnWrap    = document.getElementById('dl-btn-wrap');
-    const dlBtn        = document.getElementById('dl-btn');
-    const goBtn        = document.getElementById('go');
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Config
+  // ─────────────────────────────────────────────────────────────────────────────
+  const KEY  = '84ff588c9bmsh25a213355c21977p1c6997jsnf9a1fe621e32';
+  const HOST = 'ytstream-download-youtube-videos.p.rapidapi.com';
+  const CORE_BASE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
 
-    let ffInst   = null;
-    let ffLoaded = false;
-    let pending  = null;
+  // ─────────────────────────────────────────────────────────────────────────────
+  // State
+  // ─────────────────────────────────────────────────────────────────────────────
+  let queue   = [];   // array of item objects
+  let ffInst  = null;
+  let ffReady = false;
+  let processing = false;
 
-    // ── UI helpers ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Helpers
+  // ─────────────────────────────────────────────────────────────────────────────
+  function extractId(url) {
+    const m = url.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+  function fmtTime(s) {
+    if (!s || isNaN(s)) return '';
+    return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  }
+  function toArr(obj) {
+    return obj ? (Array.isArray(obj) ? obj : Object.values(obj)) : [];
+  }
+  function pickVideo(adaptive) {
+    const vs = adaptive.filter(f => f.url && f.mimeType?.includes('video'))
+                       .sort((a,b)=>(parseInt(b.height)||0)-(parseInt(a.height)||0));
+    return vs.find(f=>parseInt(f.height)===1080&&f.mimeType?.includes('mp4'))
+        || vs.find(f=>parseInt(f.height)===1080)
+        || vs[0] || null;
+  }
+  function pickAudio(adaptive) {
+    const as = adaptive.filter(f => f.url && f.mimeType?.includes('audio'))
+                       .sort((a,b)=>(parseInt(b.averageBitrate||b.bitrate)||0)-(parseInt(a.averageBitrate||a.bitrate)||0));
+    return as.find(f=>f.mimeType?.includes('mp4a')) || as[0] || null;
+  }
+  function safeFilename(str) {
+    return (str||'video').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_') || 'video';
+  }
+  function mb(bytes) { return (bytes/1024/1024).toFixed(1)+' MB'; }
 
-    function addLog(msg, type = 'info') {
-      logEl.style.display = 'block';
-      const dc = { spin:'d-spin', ok:'d-ok', err:'d-err', info:'d-info' }[type] || 'd-info';
-      const el = document.createElement('div');
-      el.className = 'log-line';
-      el.innerHTML = `<div class="dot ${dc}"></div><div class="log-text ${type==='ok'||type==='spin'?'hi':''}">${msg}</div>`;
-      logEl.appendChild(el);
-      return el;
+  async function fetchBytes(url, onProgress) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const total = parseInt(res.headers.get('content-length')||'0');
+    const reader = res.body.getReader();
+    const chunks = []; let got = 0;
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      chunks.push(value); got += value.length;
+      if (total && onProgress) onProgress(got/total);
     }
-    function updateLog(el, msg, type) {
-      el.querySelector('.dot').className = `dot ${{ spin:'d-spin', ok:'d-ok', err:'d-err', info:'d-info' }[type]||'d-info'}`;
-      const lt = el.querySelector('.log-text');
-      lt.textContent = msg;
-      if (type === 'ok') lt.classList.add('hi'); else lt.classList.remove('hi');
-    }
-    function setProgress(pct, label, sub) {
-      progressWrap.style.display = 'block';
-      progBar.style.width = pct + '%';
-      if (label !== undefined) progLabel.textContent = label;
-      if (sub   !== undefined) progSub.textContent   = sub;
-    }
-    function reset() {
-      logEl.innerHTML = ''; logEl.style.display = 'none';
-      vinfoEl.style.display = 'none';
-      progressWrap.style.display = 'none';
-      dlBtnWrap.style.display = 'none';
-      pending = null;
-      progBar.style.width = '0%';
-      progSub.textContent = '';
-    }
-    function extractId(url) {
-      const m = url.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-      return m ? m[1] : null;
-    }
-    function fmtTime(s) {
-      if (!s) return '';
-      return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-    }
-    function toArr(obj) {
-      return obj ? (Array.isArray(obj) ? obj : Object.values(obj)) : [];
-    }
-    function pickVideo(adaptive) {
-      const vs = adaptive.filter(f => f.url && f.mimeType?.includes('video'))
-                         .sort((a,b) => (parseInt(b.height)||0)-(parseInt(a.height)||0));
-      return vs.find(f => parseInt(f.height)===1080 && f.mimeType?.includes('mp4'))
-          || vs.find(f => parseInt(f.height)===1080)
-          || vs[0] || null;
-    }
-    function pickAudio(adaptive) {
-      const as = adaptive.filter(f => f.url && f.mimeType?.includes('audio'))
-                         .sort((a,b)=>(parseInt(b.averageBitrate||b.bitrate)||0)-(parseInt(a.averageBitrate||a.bitrate)||0));
-      return as.find(f => f.mimeType?.includes('mp4a')) || as[0] || null;
-    }
+    const out = new Uint8Array(got); let off = 0;
+    for (const c of chunks) { out.set(c, off); off += c.length; }
+    return out;
+  }
 
-    // ── Fetch info ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // FFmpeg init
+  // ─────────────────────────────────────────────────────────────────────────────
+  async function initFF() {
+    if (ffReady) return ffInst;
+    const { FFmpeg } = FFmpegWASM;
+    const { toBlobURL } = FFmpegUtil;
+    const ff = new FFmpeg();
+    await ff.load({
+      coreURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`,   'text/javascript'),
+      wasmURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, 'application/wasm'),
+    });
+    ffInst = ff; ffReady = true;
+    return ff;
+  }
 
-    async function go() {
-      const raw = document.getElementById('url').value.trim();
-      if (!raw) { document.getElementById('url').focus(); return; }
-      const id = extractId(raw);
-      if (!id) { reset(); addLog('Could not parse a YouTube video ID from that URL.', 'err'); return; }
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Queue rendering
+  // ─────────────────────────────────────────────────────────────────────────────
+  function renderQueue() {
+    const el = document.getElementById('queue');
+    el.innerHTML = '';
+    queue.forEach((item, i) => {
+      const div = document.createElement('div');
+      div.className = `qitem ${item.state}`;
+      div.id = `qi-${item.id}`;
 
-      reset();
-      goBtn.disabled = true;
-      const sl = addLog('Fetching video info from YTStream…', 'spin');
+      // thumbnail sources: best available
+      const thumbHtml = item.thumbUrl
+        ? `<img class="qthumb" src="${item.thumbUrl}" alt="" />`
+        : `<div class="qthumb-placeholder">▶</div>`;
 
-      try {
-        const res = await fetch(`https://${HOST}/dl?id=${id}`, {
-          headers: { 'x-rapidapi-key': KEY, 'x-rapidapi-host': HOST }
-        });
-        if (res.status === 429) throw new Error('Rate-limited — wait a minute and try again.');
-        if (res.status === 403) throw new Error('API key / subscription error (check RapidAPI).');
-        if (!res.ok) throw new Error(`API error ${res.status}`);
-        const d = await res.json();
-        if (d.status && d.status !== 'OK') throw new Error(`API: ${d.status}`);
+      // status text
+      const statusMap = {
+        pending:    ['wait', 'Waiting…'],
+        fetching:   ['spin', 'Fetching info…'],
+        ready:      ['ok',   item.videoQual ? `${item.videoQual} · ${item.audioBitrate}kbps audio — ready` : 'Ready'],
+        downloading:['spin', item.progText || 'Downloading…'],
+        muxing:     ['spin', item.progText || 'Muxing…'],
+        done:       ['ok',   '✓ Done'],
+        error:      ['err',  item.errorMsg || 'Error'],
+        active:     ['spin', item.progText || 'Working…'],
+      };
+      const [sc, st] = statusMap[item.state] || ['wait',''];
 
-        updateLog(sl, `Got "${d.title||'video'}" — selecting streams…`, 'ok');
-
-        if (d.title) {
-          document.getElementById('vtitle').textContent = d.title;
-          document.getElementById('vsub').textContent =
-            [d.channelTitle, fmtTime(parseInt(d.lengthSeconds))].filter(Boolean).join(' · ');
-          const thumbs = d.thumbnail;
-          const tu = Array.isArray(thumbs) ? thumbs[thumbs.length-1]?.url
-            : thumbs?.[Object.keys(thumbs).sort((a,b)=>b-a)[0]]?.url
-            || `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
-          document.getElementById('vthumb').src = tu;
-          vinfoEl.style.display = 'flex';
-        }
-
-        const adaptive = toArr(d.adaptiveFormats);
-        const vs = pickVideo(adaptive);
-        const as = pickAudio(adaptive);
-        if (!vs) throw new Error('No video stream found.');
-        if (!as) throw new Error('No audio stream found.');
-
-        const vq = vs.qualityLabel || `${vs.height}p`;
-        const ab = Math.round((as.averageBitrate||as.bitrate||0)/1000);
-        addLog(`✓ Video: ${vq} · ${vs.mimeType?.split(';')[0]}`, 'ok');
-        addLog(`✓ Audio: ${ab}kbps · ${as.mimeType?.split(';')[0]}`, 'ok');
-        addLog('Click below to fetch both streams and merge them.', 'info');
-
-        const safeTitle = (d.title||'video').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_') || 'video';
-        pending = {
-          videoUrl: vs.url, audioUrl: as.url, title: safeTitle,
-          videoExt: vs.mimeType?.includes('webm') ? 'webm' : 'mp4',
-          audioExt: as.mimeType?.includes('webm') ? 'webm' : 'mp4',
-        };
-        dlBtnWrap.style.display = 'block';
-
-      } catch(e) {
-        updateLog(sl, `Error: ${e.message}`, 'err');
+      // action buttons
+      let actions = '';
+      if (item.state === 'ready' || item.state === 'error') {
+        actions += `<button class="qbtn primary" onclick="processOne(${i})">↓ Download</button>`;
       }
-      goBtn.disabled = false;
-    }
-
-    // ── Download + merge ───────────────────────────────────────────────────────
-
-    async function fetchAsUint8Array(url, progressCb) {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
-      const total = parseInt(res.headers.get('content-length') || '0');
-      const reader = res.body.getReader();
-      const chunks = [];
-      let received = 0;
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-        received += value.length;
-        if (total && progressCb) progressCb(received / total);
+      if (item.thumbUrl) {
+        actions += `<button class="qbtn" onclick="toggleThumbPanel(${i})">🖼 Thumb</button>`;
       }
-      const merged = new Uint8Array(received);
-      let offset = 0;
-      for (const c of chunks) { merged.set(c, offset); offset += c.length; }
-      return merged;
+      if (item.state !== 'active' && item.state !== 'downloading' && item.state !== 'muxing') {
+        actions += `<button class="qbtn" onclick="removeItem(${i})">✕</button>`;
+      }
+
+      // thumbnail download panel
+      const thumbPanel = item.showThumb && item.thumbUrl ? `
+        <div class="qthumb-dl" style="display:flex">
+          <img src="${item.thumbUrl}" alt="thumbnail" />
+          <div class="qthumb-dl-btns">
+            ${item.thumbUrls ? item.thumbUrls.map((t,ti)=>`<button class="qbtn" onclick="dlThumb(${i},${ti})">${t.label}</button>`).join('') : `<button class="qbtn" onclick="dlThumb(${i},-1)">↓ Download</button>`}
+          </div>
+        </div>` : '';
+
+      div.innerHTML = `
+        <div class="qitem-top">
+          ${thumbHtml}
+          <div class="qinfo">
+            <div class="qtitle">${item.title || item.url}</div>
+            <div class="qsub">${[item.channel, fmtTime(item.duration)].filter(Boolean).join(' · ')}</div>
+            <div class="qstatus ${sc}">${st}</div>
+          </div>
+          <div class="qactions">${actions}</div>
+        </div>
+        <div class="qprog" id="qp-${item.id}" style="display:${['downloading','muxing','active'].includes(item.state)?'block':'none'}">
+          <div class="qprog-bar-bg"><div class="qprog-fill" id="qpf-${item.id}" style="width:${item.pct||0}%"></div></div>
+          <div class="qprog-sub" id="qps-${item.id}">${item.progSub||''}</div>
+        </div>
+        ${thumbPanel}
+      `;
+      el.appendChild(div);
+    });
+
+    // Show/hide process-all
+    const hasReady = queue.some(i => i.state === 'ready');
+    const hasPending = queue.some(i => ['ready','pending'].includes(i.state));
+    document.getElementById('process-all-wrap').style.display = hasPending && queue.length > 1 ? 'block' : 'none';
+    document.getElementById('proc-btn').disabled = processing || !hasReady;
+  }
+
+  function updateItemProg(id, pct, text, sub) {
+    const fill = document.getElementById(`qpf-${id}`);
+    const subEl = document.getElementById(`qps-${id}`);
+    if (fill) fill.style.width = pct + '%';
+    if (subEl && sub !== undefined) subEl.textContent = sub;
+    // also update status text in the item
+    const item = queue.find(i=>i.id===id);
+    if (item) {
+      item.pct = pct;
+      item.progText = text;
+      item.progSub = sub;
+      const statusEl = document.querySelector(`#qi-${id} .qstatus`);
+      if (statusEl) { statusEl.textContent = text; }
+      const progWrap = document.getElementById(`qp-${id}`);
+      if (progWrap) progWrap.style.display = 'block';
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Add to queue
+  // ─────────────────────────────────────────────────────────────────────────────
+  let nextId = 1;
+
+  async function addToQueue() {
+    const raw = document.getElementById('url').value.trim();
+    if (!raw) return;
+    const id = extractId(raw);
+    if (!id) { alert('Could not find a YouTube video ID in that URL.'); return; }
+
+    document.getElementById('url').value = '';
+
+    const item = {
+      id: nextId++, url: raw, ytId: id,
+      state: 'fetching', title: id, channel: '', duration: 0,
+      thumbUrl: null, thumbUrls: null, showThumb: false,
+      videoUrl: null, audioUrl: null, videoExt: 'mp4', audioExt: 'mp4',
+      videoQual: null, audioBitrate: null,
+      pct: 0, progText: '', progSub: '', errorMsg: '',
+    };
+    queue.push(item);
+    renderQueue();
+
+    try {
+      const res = await fetch(`https://${HOST}/dl?id=${id}`, {
+        headers: { 'x-rapidapi-key': KEY, 'x-rapidapi-host': HOST }
+      });
+      if (res.status === 429) throw new Error('Rate-limited — wait a minute.');
+      if (res.status === 403) throw new Error('API key error (check RapidAPI).');
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      const d = await res.json();
+      if (d.status && d.status !== 'OK') throw new Error(`API: ${d.status}`);
+
+      item.title    = d.title || id;
+      item.channel  = d.channelTitle || '';
+      item.duration = parseInt(d.lengthSeconds) || 0;
+
+      // Collect all thumbnail variants
+      const rawThumbs = d.thumbnail;
+      const thumbArr  = Array.isArray(rawThumbs)
+        ? rawThumbs
+        : rawThumbs ? Object.values(rawThumbs) : [];
+
+      // Build sorted thumb list (biggest first)
+      const sorted = [...thumbArr].sort((a,b)=>((b.width||0)*(b.height||0))-((a.width||0)*(a.height||0)));
+
+      if (sorted.length) {
+        item.thumbUrl  = sorted[0].url;
+        item.thumbUrls = sorted.map(t=>({
+          url: t.url,
+          label: `↓ ${t.width||'?'}×${t.height||'?'}`,
+        }));
+      } else {
+        // Fallback to YouTube's standard thumbnail URLs
+        item.thumbUrl  = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+        item.thumbUrls = [
+          { url: `https://img.youtube.com/vi/${id}/maxresdefault.jpg`, label: '↓ Max (1280×720)' },
+          { url: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,     label: '↓ HQ (480×360)' },
+          { url: `https://img.youtube.com/vi/${id}/mqdefault.jpg`,     label: '↓ MQ (320×180)' },
+          { url: `https://img.youtube.com/vi/${id}/sddefault.jpg`,     label: '↓ SD (640×480)' },
+        ];
+      }
+
+      const adaptive = toArr(d.adaptiveFormats);
+      const vs = pickVideo(adaptive);
+      const as = pickAudio(adaptive);
+      if (!vs) throw new Error('No 1080p video stream found.');
+      if (!as) throw new Error('No audio stream found.');
+
+      item.videoUrl     = vs.url;
+      item.audioUrl     = as.url;
+      item.videoExt     = vs.mimeType?.includes('webm') ? 'webm' : 'mp4';
+      item.audioExt     = as.mimeType?.includes('webm') ? 'webm' : 'mp4';
+      item.videoQual    = vs.qualityLabel || `${vs.height}p`;
+      item.audioBitrate = Math.round((as.averageBitrate||as.bitrate||0)/1000);
+      item.state        = 'ready';
+
+    } catch(e) {
+      item.state    = 'error';
+      item.errorMsg = e.message;
+    }
+    renderQueue();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Process one item
+  // ─────────────────────────────────────────────────────────────────────────────
+  async function processOne(idx) {
+    const item = queue[idx];
+    if (!item || item.state === 'active' || item.state === 'downloading' || item.state === 'muxing') return;
+    processing = true;
+    renderQueue();
+
+    item.state = 'active';
+    item.pct   = 0;
+    item.progText = 'Initialising FFmpeg…';
+    renderQueue();
+
+    try {
+      if (!window.crossOriginIsolated) {
+        throw new Error('SharedArrayBuffer not available. The page needs to reload to activate cross-origin isolation. Please reload and try again.');
+      }
+
+      const { fetchFile, toBlobURL } = FFmpegUtil;
+
+      updateItemProg(item.id, 5, 'Loading FFmpeg WASM…', 'First load ~10 MB, cached after');
+      const ff = await initFF();
+
+      // Video fetch
+      updateItemProg(item.id, 12, 'Fetching video stream…', '');
+      item.state = 'downloading';
+      const videoBytes = await fetchBytes(item.videoUrl, r => {
+        updateItemProg(item.id, 12+Math.round(r*28), 'Fetching video…', `${Math.round(r*100)}%`);
+      });
+
+      // Audio fetch
+      updateItemProg(item.id, 42, 'Fetching audio stream…', '');
+      const audioBytes = await fetchBytes(item.audioUrl, r => {
+        updateItemProg(item.id, 42+Math.round(r*18), 'Fetching audio…', `${Math.round(r*100)}%`);
+      });
+
+      updateItemProg(item.id, 62, 'Writing files…', '');
+      await ff.writeFile(`v_${item.id}.${item.videoExt}`, videoBytes);
+      await ff.writeFile(`a_${item.id}.${item.audioExt}`, audioBytes);
+
+      // Mux with progress
+      item.state = 'muxing';
+      updateItemProg(item.id, 65, 'Muxing…', 'Stream copy — no re-encode');
+
+      ff.on('progress', ({ progress }) => {
+        const p = Math.round(progress * 100);
+        updateItemProg(item.id, 65+Math.round(progress*28), `Muxing… ${p}%`, '');
+      });
+
+      await ff.exec([
+        '-i', `v_${item.id}.${item.videoExt}`,
+        '-i', `a_${item.id}.${item.audioExt}`,
+        '-c', 'copy',
+        '-movflags', '+faststart',
+        '-shortest',
+        `out_${item.id}.mp4`
+      ]);
+
+      updateItemProg(item.id, 95, 'Reading output…', '');
+      const out = await ff.readFile(`out_${item.id}.mp4`);
+      const blob = new Blob([out.buffer], { type: 'video/mp4' });
+      const blobUrl = URL.createObjectURL(blob);
+
+      const fname = safeFilename(item.title) + '_1080p.mp4';
+      const a = document.createElement('a');
+      a.href = blobUrl; a.download = fname;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 20000);
+
+      updateItemProg(item.id, 100, `✓ Saved as ${fname}`, '');
+      item.state = 'done';
+
+      // Cleanup VFS
+      for (const f of [`v_${item.id}.${item.videoExt}`, `a_${item.id}.${item.audioExt}`, `out_${item.id}.mp4`]) {
+        try { await ff.deleteFile(f); } catch {}
+      }
+
+    } catch(e) {
+      item.state    = 'error';
+      item.errorMsg = e.message;
+      item.progText = '';
     }
 
-    async function runDownload() {
-      if (!pending) return;
-      dlBtn.disabled = true; goBtn.disabled = true;
-      const { videoUrl, audioUrl, title, videoExt, audioExt } = pending;
+    processing = false;
+    renderQueue();
+  }
 
-      try {
-        // ── Init FFmpeg (v0.11 createFFmpeg — main thread, no workers) ──────────
-        if (!ffLoaded) {
-          setProgress(2, 'Loading FFmpeg.wasm…', 'Downloading WASM binary (~20 MB, cached after first load)');
-          const { createFFmpeg } = FFmpeg; // global from the 0.11 script tag
-          ffInst = createFFmpeg({
-            log: false,
-            progress: ({ ratio }) => {
-              if (ratio >= 0) setProgress(65 + Math.round(ratio * 28), `Muxing… ${Math.round(ratio*100)}%`);
-            },
-          });
-          await ffInst.load();
-          ffLoaded = true;
-        }
-        const ff = ffInst;
-        setProgress(15, 'FFmpeg ready', '');
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Process all
+  // ─────────────────────────────────────────────────────────────────────────────
+  async function processAll() {
+    for (let i = 0; i < queue.length; i++) {
+      if (queue[i].state === 'ready') {
+        await processOne(i);
+      }
+    }
+  }
 
-        // ── Fetch video stream ──────────────────────────────────────────────────
-        const vl = addLog('Fetching 1080p video stream…', 'spin');
-        setProgress(18, 'Fetching video stream…', 'May take a while for longer videos');
-        const videoBytes = await fetchAsUint8Array(videoUrl, r => setProgress(18 + Math.round(r*22), 'Fetching video stream…', `${Math.round(r*100)}%`));
-        updateLog(vl, `✓ Video fetched (${(videoBytes.length/1024/1024).toFixed(1)} MB)`, 'ok');
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Thumbnail download
+  // ─────────────────────────────────────────────────────────────────────────────
+  function toggleThumbPanel(idx) {
+    queue[idx].showThumb = !queue[idx].showThumb;
+    renderQueue();
+  }
 
-        // ── Fetch audio stream ──────────────────────────────────────────────────
-        const al = addLog('Fetching best audio stream…', 'spin');
-        setProgress(42, 'Fetching audio stream…', '');
-        const audioBytes = await fetchAsUint8Array(audioUrl, r => setProgress(42 + Math.round(r*18), 'Fetching audio stream…', `${Math.round(r*100)}%`));
-        updateLog(al, `✓ Audio fetched (${(audioBytes.length/1024/1024).toFixed(1)} MB)`, 'ok');
+  function dlThumb(idx, thumbIdx) {
+    const item = queue[idx];
+    const tu = thumbIdx === -1
+      ? item.thumbUrl
+      : item.thumbUrls[thumbIdx].url;
+    if (!tu) return;
 
-        // ── Write to virtual FS ─────────────────────────────────────────────────
-        setProgress(62, 'Writing to virtual filesystem…', '');
-        ff.FS('writeFile', `v.${videoExt}`, videoBytes);
-        ff.FS('writeFile', `a.${audioExt}`, audioBytes);
-
-        // ── Mux ─────────────────────────────────────────────────────────────────
-        const ml = addLog('Muxing streams (stream copy — no re-encode)…', 'spin');
-        setProgress(65, 'Muxing…', '');
-        await ff.run(
-          '-i', `v.${videoExt}`,
-          '-i', `a.${audioExt}`,
-          '-c', 'copy',
-          '-movflags', '+faststart',
-          '-shortest',
-          'out.mp4'
-        );
-        updateLog(ml, '✓ Mux complete', 'ok');
-
-        // ── Read output & trigger download ──────────────────────────────────────
-        setProgress(95, 'Reading output…', '');
-        const out = ff.FS('readFile', 'out.mp4');
-        const blob = new Blob([out.buffer], { type: 'video/mp4' });
-        const blobUrl = URL.createObjectURL(blob);
-
+    // Fetch as blob so the browser downloads it instead of navigating
+    fetch(tu)
+      .then(r => r.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = blobUrl; a.download = `${title}_1080p.mp4`;
+        a.href = url;
+        a.download = safeFilename(item.title) + '_thumb.jpg';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 20000);
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      })
+      .catch(() => window.open(tu, '_blank'));
+  }
 
-        setProgress(100, '✓ Download started!', `${title}_1080p.mp4`);
-        addLog(`✓ Saved as ${title}_1080p.mp4`, 'ok');
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Remove item
+  // ─────────────────────────────────────────────────────────────────────────────
+  function removeItem(idx) {
+    queue.splice(idx, 1);
+    renderQueue();
+  }
 
-        // Cleanup VFS
-        for (const f of [`v.${videoExt}`, `a.${audioExt}`, 'out.mp4']) {
-          try { ff.FS('unlink', f); } catch {}
-        }
-
-      } catch(e) {
-        setProgress(0, 'Error', e.message);
-        addLog(`Error: ${e.message}`, 'err');
-        if (/Worker|COOP|cross-origin/i.test(e.message)) {
-          addLog('Unexpected worker error — please report this.', 'info');
-        } else if (/fetch|CORS|network/i.test(e.message)) {
-          addLog('Stream URL may have expired — press GO again to refresh.', 'info');
-        }
-      }
-
-      dlBtn.disabled = false; goBtn.disabled = false;
-    }
-
-    dlBtn.addEventListener('click', runDownload);
-    document.getElementById('url').addEventListener('keydown', e => { if (e.key==='Enter') go(); });
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Enter key on input
+  // ─────────────────────────────────────────────────────────────────────────────
+  document.getElementById('url').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addToQueue();
+  });
   </script>
 </body>
 </html>
