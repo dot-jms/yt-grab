@@ -155,14 +155,23 @@
         <div id="fmts-list"></div>
       </div>
       <div id="merge-section">
-        <div class="merge-title">② Merge .tar → .mp4</div>
-        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('tar-input').click()">
-          <div class="dz-icon">📦</div>
-          <div class="dz-label">Drop .tar here or click to browse</div>
-          <div class="dz-sub">Drop the .tar you downloaded above — streams will be merged in your browser</div>
+        <div class="merge-title">② Drop video + audio → merge to .mp4</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem;">
+          <div class="drop-zone" id="dz-video" onclick="document.getElementById('input-video').click()">
+            <div class="dz-icon" id="dz-video-icon">🎞</div>
+            <div class="dz-label" id="dz-video-label">Drop video file</div>
+            <div class="dz-sub" id="dz-video-sub">webm or mp4 (no audio)</div>
+          </div>
+          <div class="drop-zone" id="dz-audio" onclick="document.getElementById('input-audio').click()">
+            <div class="dz-icon" id="dz-audio-icon">🎵</div>
+            <div class="dz-label" id="dz-audio-label">Drop audio file</div>
+            <div class="dz-sub" id="dz-audio-sub">mp4/aac or webm/opus</div>
+          </div>
         </div>
-        <input type="file" id="tar-input" accept=".tar" onchange="handleTar(this.files[0])" />
-        <div id="merge-prog">
+        <input type="file" id="input-video" accept=".mp4,.webm,.mkv" onchange="onVideoFile(this.files[0])" />
+        <input type="file" id="input-audio" accept=".mp4,.webm,.m4a,.ogg,.aac" onchange="onAudioFile(this.files[0])" />
+        <button class="btn" id="merge-btn" onclick="doMerge()" disabled style="width:100%;margin-bottom:.6rem;opacity:.35;cursor:not-allowed;">MERGE → .mp4</button>
+        <div id="merge-prog" style="display:none;">
           <div class="mprog-lbl" id="mprog-lbl">Processing…</div>
           <div class="mprog-bg"><div class="mprog-fill" id="mprog-fill"></div></div>
         </div>
@@ -292,9 +301,6 @@
         const videoOnly = adaptiveFormats.filter(f => f.url && f.mimeType?.includes('video'));
         const audioOnly = adaptiveFormats.filter(f => f.url && f.mimeType?.includes('audio'));
 
-        // Store audioOnly on window so TAR buttons can access it
-        window._lastAudioOnly = audioOnly;
-
         // Sort by height descending
         const byHeight = arr => [...arr].sort((a,b) => (parseInt(b.height)||0)-(parseInt(a.height)||0));
         const byBitrate = arr => [...arr].sort((a,b) => (parseInt(b.averageBitrate||b.bitrate)||0)-(parseInt(a.averageBitrate||a.bitrate)||0));
@@ -317,47 +323,47 @@
 
         if (!rows.length) throw new Error('No downloadable formats found.');
 
-        // ── Best-quality TAR button (picks best video + best audio automatically) ──
+        // ── Best-quality: two direct download links ──
         const bestVideo = byHeight(videoOnly)[0] || byHeight(combined)[0];
         const bestAudioForBtn = byBitrate(audioOnly).find(f => f.mimeType?.includes('mp4a')) || byBitrate(audioOnly)[0];
         if (bestVideo && bestAudioForBtn) {
           const bvQual  = bestVideo.qualityLabel || `${bestVideo.height}p`;
           const bvCodec = codecLabel(bestVideo.mimeType);
           const bvSize  = humanSize(bestVideo.contentLength);
+          const bvExt   = containerLabel(bestVideo.mimeType) || 'mp4';
           const baKbps  = Math.round((parseInt(bestAudioForBtn.averageBitrate||bestAudioForBtn.bitrate)||0)/1000);
           const baCodec = codecLabel(bestAudioForBtn.mimeType);
           const baSize  = humanSize(bestAudioForBtn.contentLength);
+          const baExt   = containerLabel(bestAudioForBtn.mimeType) || 'mp4';
+          const safe    = (d.title||'video').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_') || 'video';
+
+          // Store title for merge step
+          window._mergeTitle = d.title || 'video';
 
           const bestRow = document.createElement('div');
           bestRow.style.cssText = 'margin-bottom:1rem;';
           bestRow.innerHTML = `
-            <div class="fmt-group-title" style="color:var(--accent);margin-bottom:.5rem;">⚡ Best Quality TAR (video + audio bundled)</div>
-            <button id="best-tar-btn" style="
-              display:flex;align-items:center;justify-content:space-between;width:100%;
-              background:#0f0f00;border:1px solid var(--accent);border-radius:var(--r);
-              padding:.65rem .9rem;cursor:pointer;color:var(--text);font-family:'Space Mono',monospace;
-              transition:background .15s,box-shadow .15s;gap:.6rem;
-            ">
-              <div style="display:flex;align-items:center;gap:.6rem;">
-                <span style="font-size:.63rem;font-family:'Syne',sans-serif;font-weight:800;background:#1a1a00;border:1px solid var(--accent);border-radius:2px;padding:.12rem .35rem;color:var(--accent);white-space:nowrap;">📦 TAR</span>
-                <span style="font-size:.68rem;color:var(--muted);">
-                  <span style="color:var(--text)">${bvQual}</span> ${bvCodec}${bvSize?' · '+bvSize:''} &nbsp;+&nbsp;
-                  <span style="color:var(--text)">${baKbps}kbps</span> ${baCodec}${baSize?' · '+baSize:''}
-                </span>
-              </div>
-              <span style="font-size:.8rem;color:var(--accent);font-family:'Syne',sans-serif;font-weight:800;">↓</span>
-            </button>
+            <div class="fmt-group-title" style="color:var(--accent);margin-bottom:.5rem;">⚡ Best Quality — download both, then merge below</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+              <a class="fmt" href="${bestVideo.url}" download="${safe}_video.${bvExt}" style="flex-direction:column;align-items:flex-start;gap:.25rem;padding:.7rem .9rem;">
+                <div style="display:flex;align-items:center;gap:.5rem;width:100%;justify-content:space-between;">
+                  <span style="font-size:.6rem;font-family:'Syne',sans-serif;font-weight:800;background:#1a1a00;border:1px solid var(--accent);border-radius:2px;padding:.1rem .3rem;color:var(--accent);">① VIDEO</span>
+                  <span class="fmt-arrow">↓</span>
+                </div>
+                <div style="font-size:.68rem;color:var(--text);font-weight:700;">${bvQual} ${bvCodec}</div>
+                <div style="font-size:.6rem;color:var(--muted);">${bvSize ? bvSize+' · ' : ''}${bvExt.toUpperCase()}</div>
+              </a>
+              <a class="fmt" href="${bestAudioForBtn.url}" download="${safe}_audio.${baExt}" style="flex-direction:column;align-items:flex-start;gap:.25rem;padding:.7rem .9rem;">
+                <div style="display:flex;align-items:center;gap:.5rem;width:100%;justify-content:space-between;">
+                  <span style="font-size:.6rem;font-family:'Syne',sans-serif;font-weight:800;background:#001a00;border:1px solid #4ade80;border-radius:2px;padding:.1rem .3rem;color:#4ade80;">② AUDIO</span>
+                  <span class="fmt-arrow">↓</span>
+                </div>
+                <div style="font-size:.68rem;color:var(--text);font-weight:700;">${baKbps}kbps ${baCodec}</div>
+                <div style="font-size:.6rem;color:var(--muted);">${baSize ? baSize+' · ' : ''}${baExt.toUpperCase()}</div>
+              </a>
+            </div>
           `;
           fmtList.appendChild(bestRow);
-
-          document.getElementById('best-tar-btn').onmouseenter = function() {
-            this.style.background = '#1a1a00'; this.style.boxShadow = '0 2px 12px rgba(232,255,71,.25)';
-          };
-          document.getElementById('best-tar-btn').onmouseleave = function() {
-            this.style.background = '#0f0f00'; this.style.boxShadow = 'none';
-          };
-          document.getElementById('best-tar-btn').onclick = () =>
-            downloadTar(bestVideo, audioOnly, d.title || 'video');
         }
 
         rows.forEach(({ group, items }) => {
@@ -420,142 +426,43 @@
       if (e.key === 'Enter') go();
     });
 
-    // ── TAR builder ──────────────────────────────────────────────────────────
-    function buildTar(files) {
-      const blocks = [];
-      for (const {name, data} of files) {
-        const header = new Uint8Array(512);
-        const enc = new TextEncoder();
-        header.set(enc.encode(name.slice(0,100)), 0);
-        header.set(enc.encode('0000644\0'), 100);
-        header.set(enc.encode('0000000\0'), 108);
-        header.set(enc.encode('0000000\0'), 116);
-        header.set(enc.encode(data.length.toString(8).padStart(11,'0') + ' '), 124);
-        header.set(enc.encode(Math.floor(Date.now()/1000).toString(8).padStart(11,'0') + ' '), 136);
-        header[156] = 48;
-        header.set(enc.encode('ustar  \0'), 257);
-        let sum = 0;
-        for (let i = 0; i < 512; i++) sum += (i>=148&&i<156) ? 32 : header[i];
-        header.set(enc.encode(sum.toString(8).padStart(6,'0') + '\0 '), 148);
-        blocks.push(header);
-        const padded = new Uint8Array(Math.ceil(data.length/512)*512);
-        padded.set(data);
-        blocks.push(padded);
-      }
-      blocks.push(new Uint8Array(1024));
-      const total = blocks.reduce((a,b)=>a+b.length,0);
-      const out = new Uint8Array(total); let off = 0;
-      for (const b of blocks) { out.set(b, off); off += b.length; }
-      return out;
+    // ── Two-file merge state ─────────────────────────────────────────────────
+    let _videoFile = null, _audioFile = null;
+
+    function setupDropZone(dzId, onFile, labelId, subId, iconId, fileType) {
+      const dz = document.getElementById(dzId);
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+      dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('drag-over');
+        const f = e.dataTransfer.files[0];
+        if (f) onFile(f);
+      });
     }
 
-    // ── TAR parser ───────────────────────────────────────────────────────────
-    function parseTar(buffer) {
-      const data = new Uint8Array(buffer);
-      const dec  = new TextDecoder();
-      const files = {}; let pos = 0;
-      while (pos + 512 <= data.length) {
-        const hdr  = data.slice(pos, pos+512);
-        if (hdr.every(b=>b===0)) break;
-        const name = dec.decode(hdr.slice(0,100)).replace(/\0/g,'').trim();
-        const size = parseInt(dec.decode(hdr.slice(124,136)).replace(/\0/g,'').trim(), 8) || 0;
-        pos += 512;
-        if (name && size > 0) files[name] = data.slice(pos, pos+size);
-        pos += Math.ceil(size/512)*512;
-      }
-      return files;
+    setupDropZone('dz-video', onVideoFile);
+    setupDropZone('dz-audio', onAudioFile);
+
+    function onVideoFile(f) {
+      _videoFile = f;
+      document.getElementById('dz-video-icon').textContent = '✅';
+      document.getElementById('dz-video-label').textContent = f.name.length > 22 ? f.name.slice(0,20)+'…' : f.name;
+      document.getElementById('dz-video-sub').textContent = (f.size/1024/1024).toFixed(1)+' MB';
+      checkMergeReady();
     }
-
-    // ── fetchBytes with progress ─────────────────────────────────────────────
-    async function fetchBytes(url, onProgress) {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const total = parseInt(res.headers.get('content-length')||'0');
-      const reader = res.body.getReader();
-      const chunks = []; let got = 0;
-      while (true) {
-        const {done, value} = await reader.read();
-        if (done) break;
-        chunks.push(value); got += value.length;
-        if (total && onProgress) onProgress(got/total);
-      }
-      const out = new Uint8Array(got); let off = 0;
-      for (const c of chunks) { out.set(c, off); off += c.length; }
-      return out;
+    function onAudioFile(f) {
+      _audioFile = f;
+      document.getElementById('dz-audio-icon').textContent = '✅';
+      document.getElementById('dz-audio-label').textContent = f.name.length > 22 ? f.name.slice(0,20)+'…' : f.name;
+      document.getElementById('dz-audio-sub').textContent = (f.size/1024/1024).toFixed(1)+' MB';
+      checkMergeReady();
     }
-
-    // ── Download TAR ─────────────────────────────────────────────────────────
-    async function downloadTar(videoFormat, audioOnlyArr, title) {
-      // Disable all TAR buttons while running
-      document.querySelectorAll('.fmt-tar').forEach(b => b.disabled = true);
-      const bestBtn = document.getElementById('best-tar-btn');
-      if (bestBtn) { bestBtn.disabled = true; bestBtn.style.opacity = '.35'; bestBtn.style.cursor = 'not-allowed'; }
-
-      const safe = (title||'video').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_') || 'video';
-
-      // Pick best audio (highest bitrate, prefer AAC)
-      const audios = [...audioOnlyArr].sort((a,b)=>
-        (parseInt(b.averageBitrate||b.bitrate)||0)-(parseInt(a.averageBitrate||a.bitrate)||0));
-      const bestAudio = audios.find(f=>f.mimeType?.includes('mp4a')) || audios[0];
-      if (!bestAudio) { alert('No audio stream found.'); document.querySelectorAll('.fmt-tar').forEach(b=>b.disabled=false); return; }
-
-      const vExt = videoFormat.mimeType?.includes('webm') ? 'webm' : 'mp4';
-      const aExt = bestAudio.mimeType?.includes('webm') ? 'webm' : 'mp4';
-
-      // Show progress in log
-      logEl.style.display = 'block';
-      const vl = addLog('Fetching video stream…', 'spin');
-
-      try {
-        const videoBytes = await fetchBytes(videoFormat.url, r => {
-          vl.querySelector('.log-text').textContent = `Fetching video… ${Math.round(r*100)}%`;
-        });
-        vl.querySelector('.dot').className = 'dot d-ok';
-        vl.querySelector('.log-text').textContent = `✓ Video fetched (${(videoBytes.length/1024/1024).toFixed(1)} MB)`;
-        vl.querySelector('.log-text').classList.add('hi');
-
-        const al = addLog('Fetching audio stream…', 'spin');
-        const audioBytes = await fetchBytes(bestAudio.url, r => {
-          al.querySelector('.log-text').textContent = `Fetching audio… ${Math.round(r*100)}%`;
-        });
-        al.querySelector('.dot').className = 'dot d-ok';
-        al.querySelector('.log-text').textContent = `✓ Audio fetched (${(audioBytes.length/1024/1024).toFixed(1)} MB)`;
-        al.querySelector('.log-text').classList.add('hi');
-
-        addLog('Building .tar…', 'spin');
-        const tarBytes = buildTar([
-          { name: `${safe}__video.${vExt}`, data: videoBytes },
-          { name: `${safe}__audio.${aExt}`, data: audioBytes },
-          { name: 'meta.txt',                data: new TextEncoder().encode(title) },
-        ]);
-
-        const blob = new Blob([tarBytes], { type:'application/x-tar' });
-        const url  = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `${safe}_streams.tar`;
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        setTimeout(()=>URL.revokeObjectURL(url), 20000);
-
-        addLog(`✓ Downloaded ${safe}_streams.tar — now drop it in the merge box below!`, 'ok');
-
-      } catch(e) {
-        addLog(`Error: ${e.message}`, 'err');
+    function checkMergeReady() {
+      const btn = document.getElementById('merge-btn');
+      if (_videoFile && _audioFile) {
+        btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
       }
-
-      document.querySelectorAll('.fmt-tar').forEach(b => b.disabled = false);
-      const bestBtnEnd = document.getElementById('best-tar-btn');
-      if (bestBtnEnd) { bestBtnEnd.disabled = false; bestBtnEnd.style.opacity = '1'; bestBtnEnd.style.cursor = 'pointer'; }
     }
-
-    // ── Merge drop zone ──────────────────────────────────────────────────────
-    const dropZone = document.getElementById('drop-zone');
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-    dropZone.addEventListener('drop', e => {
-      e.preventDefault(); dropZone.classList.remove('drag-over');
-      const f = e.dataTransfer.files[0];
-      if (f) handleTar(f);
-    });
 
     function mlog(msg, type='info') {
       const el = document.getElementById('merge-log');
@@ -573,39 +480,35 @@
       if (lbl) document.getElementById('mprog-lbl').textContent = lbl;
     }
 
-    async function handleTar(file) {
+    async function doMerge() {
+      if (!_videoFile || !_audioFile) return;
       document.getElementById('merge-log').innerHTML = '';
       document.getElementById('merge-log').style.display = 'none';
       document.getElementById('merge-prog').style.display = 'none';
+      const btn = document.getElementById('merge-btn');
+      btn.disabled = true; btn.style.opacity = '.35';
 
-      const l1 = mlog(`Reading ${file.name}…`, 'spin');
-      setMprog(5, 'Reading .tar…');
-
+      const l1 = mlog('Reading video file…', 'spin');
+      setMprog(5, 'Reading files…');
       try {
-        const buf   = await file.arrayBuffer();
-        const files = parseTar(buf);
-        const names = Object.keys(files);
-
-        const videoName = names.find(n => n.includes('__video'));
-        const audioName = names.find(n => n.includes('__audio'));
-        const metaName  = names.find(n => n === 'meta.txt');
-        if (!videoName) throw new Error('No video stream found in .tar');
-        if (!audioName) throw new Error('No audio stream found in .tar');
-
-        const title = metaName ? new TextDecoder().decode(files[metaName]) : 'video';
+        const videoBuf = await _videoFile.arrayBuffer();
         l1.querySelector('.mdot').className = 'mdot ok';
-        l1.querySelector('div:last-child').textContent = `Parsed — found video + audio`;
+        l1.querySelector('div:last-child').textContent = `✓ Video read (${(_videoFile.size/1024/1024).toFixed(1)} MB)`;
 
-        mlog(`Video: ${videoName}`, 'ok');
-        mlog(`Audio: ${audioName}`, 'ok');
-        setMprog(20, 'Muxing with MP4Box.js…');
+        const l2 = mlog('Reading audio file…', 'spin');
+        setMprog(20, 'Reading audio…');
+        const audioBuf = await _audioFile.arrayBuffer();
+        l2.querySelector('.mdot').className = 'mdot ok';
+        l2.querySelector('div:last-child').textContent = `✓ Audio read (${(_audioFile.size/1024/1024).toFixed(1)} MB)`;
 
+        setMprog(35, 'Muxing with MP4Box.js…');
         const ml = mlog('Muxing streams…', 'spin');
-        const outBytes = await muxMP4(files[videoName], files[audioName]);
+        const outBytes = await muxMP4(new Uint8Array(videoBuf), new Uint8Array(audioBuf));
         ml.querySelector('.mdot').className = 'mdot ok';
         ml.querySelector('div:last-child').textContent = '✓ Mux complete';
 
-        setMprog(95, 'Downloading…');
+        setMprog(95, 'Saving…');
+        const title = window._mergeTitle || 'video';
         const safe  = title.replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_') || 'video';
         const fname = safe + '_merged.mp4';
         const blob  = new Blob([outBytes], { type:'video/mp4' });
@@ -614,14 +517,13 @@
         a.href = burl; a.download = fname;
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         setTimeout(()=>URL.revokeObjectURL(burl), 20000);
-
         setMprog(100, '✓ Done!');
         mlog(`✓ Saved as ${fname}`, 'ok');
-
       } catch(e) {
         setMprog(0, 'Error');
         mlog(`Error: ${e.message}`, 'err');
       }
+      btn.disabled = false; btn.style.opacity = '1';
     }
 
     // ── MP4Box mux ───────────────────────────────────────────────────────────
