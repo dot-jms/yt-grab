@@ -317,6 +317,49 @@
 
         if (!rows.length) throw new Error('No downloadable formats found.');
 
+        // ── Best-quality TAR button (picks best video + best audio automatically) ──
+        const bestVideo = byHeight(videoOnly)[0] || byHeight(combined)[0];
+        const bestAudioForBtn = byBitrate(audioOnly).find(f => f.mimeType?.includes('mp4a')) || byBitrate(audioOnly)[0];
+        if (bestVideo && bestAudioForBtn) {
+          const bvQual  = bestVideo.qualityLabel || `${bestVideo.height}p`;
+          const bvCodec = codecLabel(bestVideo.mimeType);
+          const bvSize  = humanSize(bestVideo.contentLength);
+          const baKbps  = Math.round((parseInt(bestAudioForBtn.averageBitrate||bestAudioForBtn.bitrate)||0)/1000);
+          const baCodec = codecLabel(bestAudioForBtn.mimeType);
+          const baSize  = humanSize(bestAudioForBtn.contentLength);
+
+          const bestRow = document.createElement('div');
+          bestRow.style.cssText = 'margin-bottom:1rem;';
+          bestRow.innerHTML = `
+            <div class="fmt-group-title" style="color:var(--accent);margin-bottom:.5rem;">⚡ Best Quality TAR (video + audio bundled)</div>
+            <button id="best-tar-btn" style="
+              display:flex;align-items:center;justify-content:space-between;width:100%;
+              background:#0f0f00;border:1px solid var(--accent);border-radius:var(--r);
+              padding:.65rem .9rem;cursor:pointer;color:var(--text);font-family:'Space Mono',monospace;
+              transition:background .15s,box-shadow .15s;gap:.6rem;
+            ">
+              <div style="display:flex;align-items:center;gap:.6rem;">
+                <span style="font-size:.63rem;font-family:'Syne',sans-serif;font-weight:800;background:#1a1a00;border:1px solid var(--accent);border-radius:2px;padding:.12rem .35rem;color:var(--accent);white-space:nowrap;">📦 TAR</span>
+                <span style="font-size:.68rem;color:var(--muted);">
+                  <span style="color:var(--text)">${bvQual}</span> ${bvCodec}${bvSize?' · '+bvSize:''} &nbsp;+&nbsp;
+                  <span style="color:var(--text)">${baKbps}kbps</span> ${baCodec}${baSize?' · '+baSize:''}
+                </span>
+              </div>
+              <span style="font-size:.8rem;color:var(--accent);font-family:'Syne',sans-serif;font-weight:800;">↓</span>
+            </button>
+          `;
+          fmtList.appendChild(bestRow);
+
+          document.getElementById('best-tar-btn').onmouseenter = function() {
+            this.style.background = '#1a1a00'; this.style.boxShadow = '0 2px 12px rgba(232,255,71,.25)';
+          };
+          document.getElementById('best-tar-btn').onmouseleave = function() {
+            this.style.background = '#0f0f00'; this.style.boxShadow = 'none';
+          };
+          document.getElementById('best-tar-btn').onclick = () =>
+            downloadTar(bestVideo, audioOnly, d.title || 'video');
+        }
+
         rows.forEach(({ group, items }) => {
           const gt = document.createElement('div');
           gt.className = 'fmt-group-title';
@@ -355,20 +398,7 @@
               </div>
             `;
 
-            // TAR button — only on video-only adaptive streams (need merging)
-            // and on combined formats (can still tar for convenience)
-            if (!isAudio) {
-              const tarBtn = document.createElement('button');
-              tarBtn.className = 'fmt-tar';
-              tarBtn.title = 'Download this video + best audio as a .tar, then drop it below to merge';
-              tarBtn.textContent = '📦 TAR';
-              tarBtn.onclick = () => downloadTar(f, window._lastAudioOnly || [], d.title || 'video');
-              row.appendChild(a);
-              row.appendChild(tarBtn);
-            } else {
-              row.appendChild(a);
-            }
-
+            row.appendChild(a);
             fmtList.appendChild(row);
           });
         });
@@ -458,6 +488,8 @@
     async function downloadTar(videoFormat, audioOnlyArr, title) {
       // Disable all TAR buttons while running
       document.querySelectorAll('.fmt-tar').forEach(b => b.disabled = true);
+      const bestBtn = document.getElementById('best-tar-btn');
+      if (bestBtn) { bestBtn.disabled = true; bestBtn.style.opacity = '.35'; bestBtn.style.cursor = 'not-allowed'; }
 
       const safe = (title||'video').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_') || 'video';
 
@@ -511,6 +543,8 @@
       }
 
       document.querySelectorAll('.fmt-tar').forEach(b => b.disabled = false);
+      const bestBtnEnd = document.getElementById('best-tar-btn');
+      if (bestBtnEnd) { bestBtnEnd.disabled = false; bestBtnEnd.style.opacity = '1'; bestBtnEnd.style.cursor = 'pointer'; }
     }
 
     // ── Merge drop zone ──────────────────────────────────────────────────────
