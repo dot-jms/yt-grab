@@ -5,117 +5,134 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>yt-grab</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@700;800;900&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0a0a0a; --surface: #111; --border: #222;
-      --accent: #e8ff47; --red: #ff4747; --text: #f0f0f0;
-      --muted: #666; --r: 4px;
+      --bg: #0a0a0a; --surface: #111; --surface2: #161616; --border: #1e1e1e;
+      --accent: #e8ff47; --green: #4ade80; --red: #ff4747; --blue: #60a5fa;
+      --text: #f0f0f0; --muted: #555; --r: 6px;
     }
     body {
       background: var(--bg); color: var(--text);
       font-family: 'Space Mono', monospace;
       min-height: 100vh; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 2rem; overflow-x: hidden;
+      align-items: center; padding: 2.5rem 1rem 4rem;
     }
     body::before {
-      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 100;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 4px);
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.008) 2px, rgba(255,255,255,0.008) 4px);
     }
-    .corner { position: fixed; width: 60px; height: 60px; border-color: var(--accent); border-style: solid; opacity: 0.25; }
-    .corner-tl { top:20px; left:20px; border-width:2px 0 0 2px; }
-    .corner-tr { top:20px; right:20px; border-width:2px 2px 0 0; }
-    .corner-bl { bottom:20px; left:20px; border-width:0 0 2px 2px; }
-    .corner-br { bottom:20px; right:20px; border-width:0 2px 2px 0; }
+    .corner { position: fixed; width: 50px; height: 50px; border-color: var(--accent); border-style: solid; opacity: .18; }
+    .corner-tl { top:16px; left:16px; border-width:2px 0 0 2px; }
+    .corner-tr { top:16px; right:16px; border-width:2px 2px 0 0; }
+    .corner-bl { bottom:16px; left:16px; border-width:0 0 2px 2px; }
+    .corner-br { bottom:16px; right:16px; border-width:0 2px 2px 0; }
 
-    .container { width:100%; max-width:660px; animation: up .5s ease both; }
-    @keyframes up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+    .wrap { width: 100%; max-width: 700px; position: relative; z-index: 1; animation: up .45s ease both; }
+    @keyframes up { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
 
+    /* ── HEADER ── */
     header { margin-bottom: 2.5rem; }
-    .logo { font-family:'Syne',sans-serif; font-size:clamp(2.8rem,10vw,4.5rem); font-weight:800; line-height:.9; letter-spacing:-.03em; color:var(--accent); text-shadow:4px 4px 0 #2a3000; }
-    .logo span { color:var(--text); }
-    .tagline { margin-top:.6rem; color:var(--muted); font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; }
+    .logo { font-family:'Syne',sans-serif; font-size: clamp(3rem,11vw,5rem); font-weight:900; line-height:.88; letter-spacing:-.04em; color:var(--accent); text-shadow:5px 5px 0 #1c2000; }
+    .logo em { color: var(--text); font-style:normal; }
+    .tagline { margin-top:.55rem; color:var(--muted); font-size:.64rem; letter-spacing:.18em; text-transform:uppercase; }
 
-    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:1.75rem; position:relative; }
-    .card::before { content:''; position:absolute; top:-1px;left:-1px;right:-1px; height:2px; background:linear-gradient(90deg,var(--accent),transparent); border-radius:var(--r) var(--r) 0 0; }
+    /* ── CARD ── */
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:1.75rem; position:relative; margin-bottom:1rem; }
+    .card::before { content:''; position:absolute; top:-1px;left:20px;right:20px; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); }
 
-    .lbl { font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:.4rem; }
+    /* ── NOTICE ── */
+    .notice { background:#0f0e00; border:1px solid #2a2400; border-radius:var(--r); padding:.6rem .85rem; margin-bottom:1.4rem; font-size:.64rem; color:#665500; line-height:1.65; }
+    .notice strong { color: #a8cc00; }
 
-    .row { display:flex; gap:.6rem; margin-bottom:1.25rem; }
-    input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:var(--r); color:var(--text); font-family:'Space Mono',monospace; font-size:.8rem; padding:.7rem .9rem; outline:none; transition:border-color .2s; }
-    input:focus { border-color:var(--accent); }
-    input::placeholder { color:#2a2a2a; }
+    /* ── URL INPUT AREA ── */
+    .lbl { font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:.5rem; }
 
-    .btn { background:var(--accent); border:none; border-radius:var(--r); color:#000; cursor:pointer; font-family:'Syne',sans-serif; font-size:.85rem; font-weight:800; letter-spacing:.04em; padding:.7rem 1.4rem; transition:transform .1s,box-shadow .1s; white-space:nowrap; }
-    .btn:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(232,255,71,.3); }
-    .btn:active { transform:none; }
-    .btn:disabled { opacity:.35; cursor:not-allowed; transform:none; box-shadow:none; }
+    #url-list { display:flex; flex-direction:column; gap:.4rem; margin-bottom:.75rem; }
 
-    .notice { background:#161200; border:1px solid #302800; border-radius:var(--r); padding:.65rem .9rem; margin-bottom:1.25rem; font-size:.67rem; color:#776600; line-height:1.6; }
-    .notice strong { color:var(--accent); }
-
-    /* Status log */
-    #log { display:none; margin-top:1.25rem; border-top:1px solid var(--border); padding-top:1rem; }
-    .log-line { display:flex; gap:.5rem; align-items:flex-start; margin-bottom:.3rem; font-size:.72rem; animation:li .2s ease both; }
+    .url-row { display:flex; gap:.5rem; align-items:center; animation: li .18s ease both; }
     @keyframes li { from{opacity:0;transform:translateX(-4px)} to{opacity:1;transform:none} }
-    .dot { width:6px; height:6px; border-radius:50%; margin-top:.3rem; flex-shrink:0; }
-    .d-spin { background:var(--accent); animation:blink 1s infinite; }
-    .d-ok   { background:#4ade80; }
-    .d-err  { background:var(--red); }
-    .d-info { background:#60a5fa; }
+    .url-row input {
+      flex:1; background:var(--bg); border:1px solid var(--border); border-radius:var(--r);
+      color:var(--text); font-family:'Space Mono',monospace; font-size:.76rem;
+      padding:.65rem .85rem; outline:none; transition:border-color .18s;
+    }
+    .url-row input:focus { border-color: var(--accent); }
+    .url-row input::placeholder { color:#282828; }
+    .url-row input.done { border-color: #2a4a00; }
+    .url-row input.err  { border-color: #4a1000; }
+
+    .rm-btn { background:none; border:1px solid #2a2a2a; border-radius:var(--r); color:var(--muted); cursor:pointer; font-size:.8rem; width:30px; height:30px; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:border-color .15s,color .15s; }
+    .rm-btn:hover { border-color:var(--red); color:var(--red); }
+
+    .add-url-btn { background:none; border:1px dashed #2a2a2a; border-radius:var(--r); color:var(--muted); cursor:pointer; font-family:'Space Mono',monospace; font-size:.68rem; padding:.5rem; width:100%; transition:border-color .18s,color .18s; letter-spacing:.05em; margin-bottom:1rem; }
+    .add-url-btn:hover { border-color: var(--accent); color:var(--accent); }
+
+    /* ── BUTTONS ── */
+    .btn { background:var(--accent); border:none; border-radius:var(--r); color:#000; cursor:pointer; font-family:'Syne',sans-serif; font-size:.85rem; font-weight:800; letter-spacing:.04em; padding:.72rem 1.5rem; transition:transform .1s,box-shadow .1s; white-space:nowrap; }
+    .btn:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(232,255,71,.28); }
+    .btn:active { transform:none; box-shadow:none; }
+    .btn:disabled { opacity:.3; cursor:not-allowed; transform:none; box-shadow:none; }
+    .btn-row { display:flex; gap:.6rem; align-items:center; }
+    .btn-secondary { background:var(--surface2); border:1px solid var(--border); color:var(--muted); font-family:'Space Mono',monospace; font-size:.68rem; }
+    .btn-secondary:hover { box-shadow: none; border-color:#3a3a3a; color:var(--text); }
+    .btn-full { width:100%; }
+
+    /* ── VIDEO QUEUE ── */
+    #queue { margin-top:1.5rem; display:none; }
+    .queue-lbl { font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:.75rem; }
+    .vid-card { background:var(--bg); border:1px solid var(--border); border-radius:var(--r); padding:.9rem 1rem; margin-bottom:.6rem; animation: li .22s ease both; }
+    .vid-top { display:flex; gap:.85rem; align-items:center; margin-bottom:.65rem; }
+    .vid-thumb { width:90px; height:50px; object-fit:cover; border-radius:3px; background:#1a1a1a; flex-shrink:0; }
+    .vid-thumb-ph { width:90px; height:50px; border-radius:3px; background:#1a1a1a; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#333; font-size:.65rem; }
+    .vid-title-wrap .vid-name { font-family:'Syne',sans-serif; font-size:.82rem; font-weight:700; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .vid-title-wrap .vid-meta { font-size:.6rem; color:var(--muted); margin-top:.2rem; }
+
+    /* status badge on each card */
+    .vid-status { display:flex; align-items:center; gap:.5rem; font-size:.68rem; color:var(--muted); }
+    .status-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    .s-wait  .status-dot { background:#333; }
+    .s-fetch .status-dot { background:var(--accent); animation:blink 1s infinite; }
+    .s-ready .status-dot { background:var(--green); }
+    .s-dl    .status-dot { background:var(--blue); animation:blink .8s infinite; }
+    .s-done  .status-dot { background:var(--green); }
+    .s-err   .status-dot { background:var(--red); }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
-    .log-text { line-height:1.5; color:var(--muted); }
-    .log-text.hi { color:var(--text); }
 
-    /* Video info */
-    #vinfo { display:none; margin-top:1rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--r); padding:.9rem; flex-direction:row; gap:.9rem; align-items:center; }
-    #vinfo img { width:100px; height:56px; object-fit:cover; border-radius:2px; flex-shrink:0; background:#1a1a1a; }
-    .vi-title { font-family:'Syne',sans-serif; font-size:.85rem; font-weight:700; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-    .vi-sub { font-size:.63rem; color:var(--muted); margin-top:.25rem; }
+    /* download buttons per card */
+    .dl-btns { display:grid; grid-template-columns:1fr 1fr; gap:.4rem; margin-top:.65rem; }
+    .dl-btn { display:flex; flex-direction:column; gap:.18rem; background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:.55rem .75rem; cursor:pointer; text-decoration:none; color:var(--text); transition:border-color .15s,background .15s; }
+    .dl-btn:hover { border-color:var(--accent); background:#0f0f00; }
+    .dl-btn-head { display:flex; align-items:center; justify-content:space-between; }
+    .dl-tag { font-size:.55rem; font-family:'Syne',sans-serif; font-weight:800; border-radius:2px; padding:.1rem .3rem; }
+    .dl-tag.video { background:#1a1a00; border:1px solid var(--accent); color:var(--accent); }
+    .dl-tag.audio { background:#001a00; border:1px solid var(--green); color:var(--green); }
+    .dl-arrow { color:var(--accent); font-weight:800; font-size:.85rem; }
+    .dl-qual { font-size:.7rem; font-weight:700; font-family:'Syne',sans-serif; margin-top:.1rem; }
+    .dl-info { font-size:.58rem; color:var(--muted); }
 
-    /* Format list */
-    #fmts { display:none; margin-top:1.25rem; border-top:1px solid var(--border); padding-top:1rem; }
-    .fmts-lbl { font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:.6rem; }
+    .dl-btn.disabled { opacity:.35; pointer-events:none; }
 
-    .fmt-group-title { font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:#444; margin:.75rem 0 .4rem; }
-    .fmt-group-title:first-child { margin-top:0; }
-
-    .fmt { display:flex; align-items:center; justify-content:space-between; gap:.6rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--r); padding:.55rem .9rem; text-decoration:none; color:var(--text); transition:border-color .15s,background .15s; cursor:pointer; margin-bottom:.3rem; }
-    .fmt:hover { border-color:var(--accent); background:#141400; }
-    .fmt-left { display:flex; align-items:center; gap:.6rem; }
-    .fmt-badge { font-size:.63rem; font-family:'Syne',sans-serif; font-weight:800; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:2px; padding:.12rem .35rem; color:var(--accent); min-width:44px; text-align:center; white-space:nowrap; }
-    .fmt-codec { font-size:.68rem; color:var(--muted); }
-    .fmt-size { font-size:.63rem; color:#444; }
-    .fmt-arrow { font-size:.8rem; color:var(--accent); font-family:'Syne',sans-serif; font-weight:800; }
-
-    .fmt-tar { background:var(--accent); border:none; border-radius:var(--r); color:#000; cursor:pointer; font-family:'Syne',sans-serif; font-size:.63rem; font-weight:800; padding:.22rem .5rem; transition:transform .1s,box-shadow .1s; white-space:nowrap; flex-shrink:0; }
-    .fmt-tar:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(232,255,71,.4); }
-    .fmt-tar:disabled { opacity:.35; cursor:not-allowed; transform:none; box-shadow:none; }
-
-    /* Merge section */
-    #merge-section { margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.25rem; display:none; }
-    .merge-title { font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:.75rem; }
-    .drop-zone { border:2px dashed var(--border); border-radius:var(--r); padding:1.75rem 1rem; text-align:center; cursor:pointer; transition:all .2s; }
-    .drop-zone:hover, .drop-zone.drag-over { border-color:var(--accent); background:#0f0f00; }
-    .drop-zone .dz-icon { font-size:1.6rem; margin-bottom:.35rem; }
-    .drop-zone .dz-label { font-family:'Syne',sans-serif; font-size:.82rem; font-weight:700; color:var(--text); }
-    .drop-zone .dz-sub { font-size:.62rem; color:var(--muted); margin-top:.2rem; }
+    /* ── MERGE SECTION ── */
+    #merge-section { display:none; }
+    .section-title { font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:1rem; }
+    .dz-grid { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-bottom:.7rem; }
+    .drop-zone { border:2px dashed var(--border); border-radius:var(--r); padding:1.4rem .75rem; text-align:center; cursor:pointer; transition:all .18s; }
+    .drop-zone:hover, .drop-zone.drag-over { border-color:var(--accent); background:#0c0c00; }
+    .dz-icon { font-size:1.4rem; margin-bottom:.25rem; }
+    .dz-label { font-family:'Syne',sans-serif; font-size:.75rem; font-weight:700; }
+    .dz-sub { font-size:.58rem; color:var(--muted); margin-top:.15rem; }
     input[type=file] { display:none; }
-    #merge-log { display:none; margin-top:.9rem; }
-    .mlog-line { display:flex; gap:.5rem; align-items:flex-start; margin-bottom:.25rem; font-size:.7rem; animation:li .2s ease both; }
-    .mdot { width:6px; height:6px; border-radius:50%; margin-top:.28rem; flex-shrink:0; }
-    .mdot.spin { background:var(--accent); animation:blink 1s infinite; }
-    .mdot.ok   { background:#4ade80; }
-    .mdot.err  { background:var(--red); }
-    #merge-prog { display:none; margin-top:.75rem; }
-    .mprog-lbl { font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.3rem; }
-    .mprog-bg  { background:#1a1a1a; border-radius:2px; height:5px; overflow:hidden; }
-    .mprog-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .35s ease; width:0%; }
 
-    footer { margin-top:2rem; font-size:.62rem; color:var(--muted); text-align:center; line-height:1.9; }
-    footer a { color:#3a3a3a; text-decoration:none; }
+    #merge-prog { display:none; margin-bottom:.75rem; }
+    .mprog-lbl { font-size:.58rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.3rem; }
+    .mprog-bg { background:#1a1a1a; border-radius:2px; height:4px; overflow:hidden; }
+    .mprog-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .35s ease; width:0%; }
+    #merge-log { font-size:.68rem; line-height:1.7; color:var(--muted); min-height:.5rem; }
+
+    footer { margin-top:2.5rem; font-size:.6rem; color:#333; text-align:center; line-height:2; }
+    footer a { color:#2a2a2a; text-decoration:none; }
     footer a:hover { color:var(--accent); }
   </style>
 </head>
@@ -125,65 +142,66 @@
   <div class="corner corner-bl"></div>
   <div class="corner corner-br"></div>
 
-  <div class="container">
+  <div class="wrap">
     <header>
-      <div class="logo">yt<span>-</span>grab</div>
-      <div class="tagline">YouTube video downloader · powered by YTStream</div>
+      <div class="logo">yt<em>-</em>grab</div>
+      <div class="tagline">batch downloader · best quality · auto-detect</div>
     </header>
 
+    <!-- INPUT CARD -->
     <div class="card">
       <div class="notice">
-        <strong>⚠</strong> Only download content you have rights to — Creative Commons, public domain, or your own videos.
+        <strong>⚠ CORS note:</strong> Downloads open in a new tab — right-click → Save As, or use the browser's download prompt. Only download content you have rights to.
       </div>
-
-      <div class="lbl">YouTube URL</div>
-      <div class="row">
-        <input type="text" id="url" placeholder="https://www.youtube.com/watch?v=..." />
-        <button class="btn" id="go" onclick="go()">GO</button>
-      </div>
-
-      <div id="log"></div>
-      <div id="vinfo">
-        <img id="vthumb" src="" alt="" />
-        <div>
-          <div class="vi-title" id="vtitle"></div>
-          <div class="vi-sub" id="vsub"></div>
+      <div class="lbl">YouTube URLs — paste one per line or add individually</div>
+      <div id="url-list">
+        <div class="url-row" data-index="0">
+          <input type="text" placeholder="https://youtube.com/watch?v=…" />
+          <button class="rm-btn" onclick="removeRow(this)" title="Remove">×</button>
         </div>
       </div>
-      <div id="fmts">
-        <div class="fmts-lbl">Pick a format to download</div>
-        <div id="fmts-list"></div>
+      <button class="add-url-btn" onclick="addRow()">+ Add another URL</button>
+      <div class="btn-row">
+        <button class="btn" id="go-btn" onclick="grabAll()">GRAB ALL</button>
+        <button class="btn btn-secondary" onclick="pasteMulti()" title="Paste multiple URLs from clipboard">Paste multi</button>
+        <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
       </div>
-      <div id="merge-section">
-        <div class="merge-title">② Drop video + audio → merge to .mp4</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem;">
-          <div class="drop-zone" id="dz-video" onclick="document.getElementById('input-video').click()">
-            <div class="dz-icon" id="dz-video-icon">🎞</div>
-            <div class="dz-label" id="dz-video-label">Drop video file</div>
-            <div class="dz-sub" id="dz-video-sub">webm or mp4 (no audio)</div>
-          </div>
-          <div class="drop-zone" id="dz-audio" onclick="document.getElementById('input-audio').click()">
-            <div class="dz-icon" id="dz-audio-icon">🎵</div>
-            <div class="dz-label" id="dz-audio-label">Drop audio file</div>
-            <div class="dz-sub" id="dz-audio-sub">mp4/aac or webm/opus</div>
-          </div>
-        </div>
-        <input type="file" id="input-video" accept=".mp4,.webm,.mkv" onchange="onVideoFile(this.files[0])" />
-        <input type="file" id="input-audio" accept=".mp4,.webm,.m4a,.ogg,.aac" onchange="onAudioFile(this.files[0])" />
-        <button class="btn" id="merge-btn" onclick="doMerge()" disabled style="width:100%;margin-bottom:.6rem;opacity:.35;cursor:not-allowed;">MERGE → .mp4</button>
-        <div id="merge-prog" style="display:none;">
-          <div class="mprog-lbl" id="mprog-lbl">Processing…</div>
-          <div class="mprog-bg"><div class="mprog-fill" id="mprog-fill"></div></div>
-        </div>
-        <div id="merge-log"></div>
-      </div>
+    </div>
 
+    <!-- QUEUE -->
+    <div id="queue">
+      <div class="queue-lbl">Download queue</div>
+      <div id="queue-list"></div>
+    </div>
+
+    <!-- MERGE CARD -->
+    <div class="card" id="merge-section">
+      <div class="section-title">② Merge video + audio → .mp4 (drag & drop files here)</div>
+      <div class="dz-grid">
+        <div class="drop-zone" id="dz-video" onclick="document.getElementById('input-video').click()">
+          <div class="dz-icon" id="dz-video-icon">🎞</div>
+          <div class="dz-label" id="dz-video-label">Drop video file</div>
+          <div class="dz-sub" id="dz-video-sub">webm or mp4 (no audio)</div>
+        </div>
+        <div class="drop-zone" id="dz-audio" onclick="document.getElementById('input-audio').click()">
+          <div class="dz-icon" id="dz-audio-icon">🎵</div>
+          <div class="dz-label" id="dz-audio-label">Drop audio file</div>
+          <div class="dz-sub" id="dz-audio-sub">mp4/aac or webm/opus</div>
+        </div>
+      </div>
+      <input type="file" id="input-video" accept=".mp4,.webm,.mkv" onchange="onVideoFile(this.files[0])" />
+      <input type="file" id="input-audio" accept=".mp4,.webm,.m4a,.ogg,.aac" onchange="onAudioFile(this.files[0])" />
+      <div id="merge-prog">
+        <div class="mprog-lbl" id="mprog-lbl">Processing…</div>
+        <div class="mprog-bg"><div class="mprog-fill" id="mprog-fill"></div></div>
+      </div>
+      <button class="btn btn-full" id="merge-btn" onclick="doMerge()" disabled style="opacity:.3;cursor:not-allowed;margin-bottom:.6rem;">MERGE → .MP4</button>
+      <div id="merge-log"></div>
     </div>
 
     <footer>
       powered by <a href="https://rapidapi.com/ytjar/api/ytstream-download-youtube-videos" target="_blank">YTStream</a> via RapidAPI ·
-      no tracking · no storage<br/>
-      only download content you have rights to
+      no tracking · no storage
     </footer>
   </div>
 
@@ -191,388 +209,374 @@
     const KEY  = '84ff588c9bmsh25a213355c21977p1c6997jsnf9a1fe621e32';
     const HOST = 'ytstream-download-youtube-videos.p.rapidapi.com';
 
-    const logEl   = document.getElementById('log');
-    const vinfoEl = document.getElementById('vinfo');
-    const fmtsEl  = document.getElementById('fmts');
-    const fmtList = document.getElementById('fmts-list');
-    const goBtn   = document.getElementById('go');
+    // ── URL row management ───────────────────────────────────────────────────
+    let rowCount = 1;
 
-    function addLog(msg, type='info') {
-      logEl.style.display = 'block';
-      const dc = {spin:'d-spin',ok:'d-ok',err:'d-err',info:'d-info'}[type]||'d-info';
-      const hi = (type==='spin'||type==='ok') ? 'hi' : '';
-      const el = document.createElement('div');
-      el.className = 'log-line';
-      el.innerHTML = `<div class="dot ${dc}"></div><div class="log-text ${hi}">${msg}</div>`;
-      logEl.appendChild(el);
-      return el;
+    function addRow(value = '') {
+      const list = document.getElementById('url-list');
+      const div  = document.createElement('div');
+      div.className = 'url-row';
+      div.dataset.index = rowCount++;
+      div.innerHTML = `
+        <input type="text" placeholder="https://youtube.com/watch?v=…" value="${value}" />
+        <button class="rm-btn" onclick="removeRow(this)" title="Remove">×</button>
+      `;
+      div.querySelector('input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') grabAll();
+      });
+      list.appendChild(div);
+      div.querySelector('input').focus();
     }
 
-    function reset() {
-      logEl.innerHTML=''; logEl.style.display='none';
-      vinfoEl.style.display='none';
-      fmtsEl.style.display='none';
-      fmtList.innerHTML='';
+    function removeRow(btn) {
+      const rows = document.querySelectorAll('.url-row');
+      if (rows.length <= 1) {
+        rows[0].querySelector('input').value = '';
+        return;
+      }
+      btn.closest('.url-row').remove();
     }
 
+    function clearAll() {
+      const list = document.getElementById('url-list');
+      list.innerHTML = `
+        <div class="url-row" data-index="0">
+          <input type="text" placeholder="https://youtube.com/watch?v=…" />
+          <button class="rm-btn" onclick="removeRow(this)" title="Remove">×</button>
+        </div>`;
+      document.getElementById('queue').style.display = 'none';
+      document.getElementById('queue-list').innerHTML = '';
+      document.getElementById('merge-section').style.display = 'none';
+    }
+
+    async function pasteMulti() {
+      try {
+        const text = await navigator.clipboard.readText();
+        const urls = text.split(/[\n\r]+/).map(s => s.trim()).filter(s => s.includes('youtu'));
+        if (!urls.length) { alert('No YouTube URLs found in clipboard.'); return; }
+        // fill first row, add more
+        const inputs = document.querySelectorAll('.url-row input');
+        if (inputs[0] && !inputs[0].value) {
+          inputs[0].value = urls.shift();
+        }
+        urls.forEach(u => addRow(u));
+      } catch { alert('Could not read clipboard. Paste URLs manually.'); }
+    }
+
+    // First input enter key
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelector('.url-row input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') grabAll();
+      });
+    });
+
+    // ── Utility ──────────────────────────────────────────────────────────────
     function extractId(url) {
       const m = url.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([A-Za-z0-9_-]{11})/);
       return m ? m[1] : null;
     }
-
     function humanSize(bytes) {
       if (!bytes) return '';
-      const mb = parseInt(bytes) / 1024 / 1024;
+      const mb = parseInt(bytes) / 1048576;
       return mb > 1 ? `${mb.toFixed(1)} MB` : `${(parseInt(bytes)/1024).toFixed(0)} KB`;
     }
-
     function fmtTime(s) {
       if (!s) return '';
-      const m = Math.floor(s/60), sec = s%60;
+      const m = Math.floor(s / 60), sec = s % 60;
       return `${m}:${String(sec).padStart(2,'0')}`;
     }
-
-    function codecLabel(mimeType='') {
-      if (mimeType.includes('avc1') || mimeType.includes('avc')) return 'H.264';
-      if (mimeType.includes('vp9'))  return 'VP9';
-      if (mimeType.includes('av01') || mimeType.includes('av1')) return 'AV1';
-      if (mimeType.includes('mp4a')) return 'AAC';
-      if (mimeType.includes('opus')) return 'Opus';
-      return mimeType.split(';')[0].split('/')[1] || '?';
+    function codecLabel(m = '') {
+      if (m.includes('avc')) return 'H.264';
+      if (m.includes('vp9'))  return 'VP9';
+      if (m.includes('av01') || m.includes('av1')) return 'AV1';
+      if (m.includes('mp4a')) return 'AAC';
+      if (m.includes('opus')) return 'Opus';
+      return m.split(';')[0].split('/')[1] || '?';
+    }
+    function containerLabel(m = '') {
+      return m.includes('webm') ? 'webm' : m.includes('mp4') ? 'mp4' : '';
+    }
+    function toArr(obj) {
+      return obj ? (Array.isArray(obj) ? obj : Object.values(obj)) : [];
+    }
+    function safeName(title) {
+      return (title || 'video').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_') || 'video';
     }
 
-    function containerLabel(mimeType='') {
-      if (mimeType.includes('webm')) return 'webm';
-      if (mimeType.includes('mp4'))  return 'mp4';
-      return '';
+    function pickBest(d) {
+      const adaptive = toArr(d.adaptiveFormats);
+      const combined = toArr(d.formats).filter(f => f.url && f.mimeType?.includes('video'));
+
+      const videoOnly = adaptive.filter(f => f.url && f.mimeType?.includes('video'));
+      const audioOnly = adaptive.filter(f => f.url && f.mimeType?.includes('audio'));
+
+      const byH = a => [...a].sort((x,y) => (parseInt(y.height)||0) - (parseInt(x.height)||0));
+      const byB = a => [...a].sort((x,y) => (parseInt(y.averageBitrate||y.bitrate)||0) - (parseInt(x.averageBitrate||x.bitrate)||0));
+
+      // Prefer H.264 video (more compatible), fallback to highest res
+      const bestVid = byH(videoOnly).find(f => f.mimeType?.includes('avc')) || byH(videoOnly)[0] || byH(combined)[0];
+      // Prefer AAC audio (mp4 container, most compatible)
+      const bestAud = byB(audioOnly).find(f => f.mimeType?.includes('mp4a')) || byB(audioOnly)[0];
+
+      return { bestVid, bestAud };
     }
 
-    async function go() {
-      const raw = document.getElementById('url').value.trim();
-      if (!raw) { document.getElementById('url').focus(); return; }
+    // ── GRAB ALL ─────────────────────────────────────────────────────────────
+    async function grabAll() {
+      const inputs = [...document.querySelectorAll('.url-row input')];
+      const urls   = inputs.map(i => i.value.trim()).filter(Boolean);
+      if (!urls.length) { inputs[0]?.focus(); return; }
 
-      const id = extractId(raw);
-      if (!id) { reset(); addLog('Could not find a YouTube video ID in that URL.', 'err'); return; }
-
-      reset();
+      const goBtn = document.getElementById('go-btn');
       goBtn.disabled = true;
-      const sl = addLog('Fetching video info from YTStream…', 'spin');
+
+      const queueEl = document.getElementById('queue');
+      const listEl  = document.getElementById('queue-list');
+      queueEl.style.display = 'block';
+      listEl.innerHTML = '';
+      document.getElementById('merge-section').style.display = 'block';
+
+      // Process all URLs concurrently
+      await Promise.all(urls.map((url, i) => processUrl(url, i, listEl)));
+
+      goBtn.disabled = false;
+    }
+
+    async function processUrl(url, index, container) {
+      const id = extractId(url);
+
+      // Create card
+      const card = document.createElement('div');
+      card.className = 'vid-card s-fetch';
+      card.id = `vid-${index}`;
+      card.innerHTML = `
+        <div class="vid-top">
+          <div class="vid-thumb-ph" id="thumb-ph-${index}">⏳</div>
+          <div class="vid-title-wrap">
+            <div class="vid-name" id="vname-${index}">${id ? url.replace(/.*youtube\.com\//,'').replace(/.*youtu\.be\//,'') : url}</div>
+            <div class="vid-meta" id="vmeta-${index}">Fetching…</div>
+          </div>
+        </div>
+        <div class="vid-status s-fetch">
+          <div class="status-dot"></div>
+          <span id="vstatus-${index}">Fetching info…</span>
+        </div>`;
+      container.appendChild(card);
+
+      if (!id) {
+        setCardState(card, index, 'err', 'Could not find a YouTube video ID in this URL.');
+        return;
+      }
 
       try {
         const res = await fetch(`https://${HOST}/dl?id=${id}`, {
           headers: { 'x-rapidapi-key': KEY, 'x-rapidapi-host': HOST }
         });
-
-        if (res.status === 429) throw new Error('Rate limit hit — try again in a minute.');
+        if (res.status === 429) throw new Error('Rate limited — wait a minute and try again.');
         if (res.status === 403) throw new Error('API key error or subscription issue.');
         if (!res.ok) throw new Error(`API error ${res.status}`);
-
         const d = await res.json();
-        if (d.status && d.status !== 'OK') throw new Error(`API returned: ${d.status}`);
+        if (d.status && d.status !== 'OK') throw new Error(`API: ${d.status}`);
 
-        sl.querySelector('.dot').className = 'dot d-ok';
-        sl.querySelector('.log-text').textContent = `Got ${d.title || 'video'} — parsing formats…`;
-        sl.querySelector('.log-text').classList.add('hi');
+        // Fill info
+        document.getElementById(`vname-${index}`).textContent = d.title || 'Unknown';
+        document.getElementById(`vmeta-${index}`).textContent =
+          [d.channelTitle, fmtTime(parseInt(d.lengthSeconds))].filter(Boolean).join(' · ');
 
-        // Show video info
-        if (d.title) {
-          document.getElementById('vtitle').textContent = d.title;
-          document.getElementById('vsub').textContent =
-            [d.channelTitle, fmtTime(parseInt(d.lengthSeconds))].filter(Boolean).join(' · ');
-          // Best thumbnail
-          const thumbs = d.thumbnail;
-          const thumbUrl = Array.isArray(thumbs)
-            ? thumbs[thumbs.length-1]?.url
-            : (thumbs?.[Object.keys(thumbs).sort((a,b)=>b-a)[0]]?.url
-               || `https://img.youtube.com/vi/${id}/hqdefault.jpg`);
-          document.getElementById('vthumb').src = thumbUrl || `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
-          vinfoEl.style.display = 'flex';
+        // Thumbnail
+        const thumbs = d.thumbnail;
+        const thumbUrl = Array.isArray(thumbs)
+          ? thumbs[thumbs.length-1]?.url
+          : (thumbs?.[Object.keys(thumbs||{}).sort((a,b)=>b-a)[0]]?.url || `https://img.youtube.com/vi/${id}/hqdefault.jpg`);
+        const ph = document.getElementById(`thumb-ph-${index}`);
+        if (ph && thumbUrl) {
+          const img = document.createElement('img');
+          img.className = 'vid-thumb';
+          img.src = thumbUrl;
+          img.alt = '';
+          ph.replaceWith(img);
         }
 
-        // The API returns formats and adaptiveFormats as objects keyed by index
-        // Convert to arrays
-        const toArr = obj => obj ? (Array.isArray(obj) ? obj : Object.values(obj)) : [];
-        const formats         = toArr(d.formats);
-        const adaptiveFormats = toArr(d.adaptiveFormats);
+        const { bestVid, bestAud } = pickBest(d);
+        if (!bestVid && !bestAud) throw new Error('No downloadable formats found.');
 
-        // Video formats: those with both video + audio (formats array, itag 18 etc)
-        // Adaptive: video-only or audio-only streams
-        const combined = formats.filter(f => f.url && f.mimeType?.includes('video'));
-        const videoOnly = adaptiveFormats.filter(f => f.url && f.mimeType?.includes('video'));
-        const audioOnly = adaptiveFormats.filter(f => f.url && f.mimeType?.includes('audio'));
+        setCardState(card, index, 'ready', 'Ready — click to download');
 
-        // Sort by height descending
-        const byHeight = arr => [...arr].sort((a,b) => (parseInt(b.height)||0)-(parseInt(a.height)||0));
-        const byBitrate = arr => [...arr].sort((a,b) => (parseInt(b.averageBitrate||b.bitrate)||0)-(parseInt(a.averageBitrate||a.bitrate)||0));
+        // Build download buttons
+        const btnRow = document.createElement('div');
+        btnRow.className = 'dl-btns';
 
-        // Deduplicate by qualityLabel + codec
-        function dedup(arr) {
-          const seen = new Set();
-          return arr.filter(f => {
-            const key = `${f.qualityLabel}-${codecLabel(f.mimeType)}`;
-            if (seen.has(key)) return false;
-            seen.add(key); return true;
-          });
-        }
+        const safe = safeName(d.title);
 
-        const rows = [
-          { group: '📹 Video + Audio (ready to download)', items: dedup(byHeight(combined)) },
-          { group: '🎞 Video only (no audio)', items: dedup(byHeight(videoOnly)) },
-          { group: '🎵 Audio only', items: dedup(byBitrate(audioOnly)) },
-        ].filter(g => g.items.length > 0);
-
-        if (!rows.length) throw new Error('No downloadable formats found.');
-
-        // ── Best-quality: two direct download links ──
-        const bestVideo = byHeight(videoOnly)[0] || byHeight(combined)[0];
-        const bestAudioForBtn = byBitrate(audioOnly).find(f => f.mimeType?.includes('mp4a')) || byBitrate(audioOnly)[0];
-        if (bestVideo && bestAudioForBtn) {
-          const bvQual  = bestVideo.qualityLabel || `${bestVideo.height}p`;
-          const bvCodec = codecLabel(bestVideo.mimeType);
-          const bvSize  = humanSize(bestVideo.contentLength);
-          const bvExt   = containerLabel(bestVideo.mimeType) || 'mp4';
-          const baKbps  = Math.round((parseInt(bestAudioForBtn.averageBitrate||bestAudioForBtn.bitrate)||0)/1000);
-          const baCodec = codecLabel(bestAudioForBtn.mimeType);
-          const baSize  = humanSize(bestAudioForBtn.contentLength);
-          const baExt   = containerLabel(bestAudioForBtn.mimeType) || 'mp4';
-          const safe    = (d.title||'video').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_') || 'video';
-
-          // Store title for merge step
-          window._mergeTitle = d.title || 'video';
-
-          const bestRow = document.createElement('div');
-          bestRow.style.cssText = 'margin-bottom:1rem;';
-          bestRow.innerHTML = `
-            <div class="fmt-group-title" style="color:var(--accent);margin-bottom:.5rem;">⚡ Best Quality — download both, then merge below</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
-              <a class="fmt" href="${bestVideo.url}" download="${safe}_video.${bvExt}" style="flex-direction:column;align-items:flex-start;gap:.25rem;padding:.7rem .9rem;">
-                <div style="display:flex;align-items:center;gap:.5rem;width:100%;justify-content:space-between;">
-                  <span style="font-size:.6rem;font-family:'Syne',sans-serif;font-weight:800;background:#1a1a00;border:1px solid var(--accent);border-radius:2px;padding:.1rem .3rem;color:var(--accent);">① VIDEO</span>
-                  <span class="fmt-arrow">↓</span>
-                </div>
-                <div style="font-size:.68rem;color:var(--text);font-weight:700;">${bvQual} ${bvCodec}</div>
-                <div style="font-size:.6rem;color:var(--muted);">${bvSize ? bvSize+' · ' : ''}${bvExt.toUpperCase()}</div>
-              </a>
-              <a class="fmt" href="${bestAudioForBtn.url}" download="${safe}_audio.${baExt}" style="flex-direction:column;align-items:flex-start;gap:.25rem;padding:.7rem .9rem;">
-                <div style="display:flex;align-items:center;gap:.5rem;width:100%;justify-content:space-between;">
-                  <span style="font-size:.6rem;font-family:'Syne',sans-serif;font-weight:800;background:#001a00;border:1px solid #4ade80;border-radius:2px;padding:.1rem .3rem;color:#4ade80;">② AUDIO</span>
-                  <span class="fmt-arrow">↓</span>
-                </div>
-                <div style="font-size:.68rem;color:var(--text);font-weight:700;">${baKbps}kbps ${baCodec}</div>
-                <div style="font-size:.6rem;color:var(--muted);">${baSize ? baSize+' · ' : ''}${baExt.toUpperCase()}</div>
-              </a>
+        if (bestVid) {
+          const vQual  = bestVid.qualityLabel || `${bestVid.height}p`;
+          const vCodec = codecLabel(bestVid.mimeType);
+          const vSize  = humanSize(bestVid.contentLength);
+          const vExt   = containerLabel(bestVid.mimeType) || 'mp4';
+          const a = document.createElement('a');
+          a.className = 'dl-btn';
+          a.href = bestVid.url;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.download = `${safe}_video.${vExt}`;
+          a.innerHTML = `
+            <div class="dl-btn-head">
+              <span class="dl-tag video">① VIDEO</span>
+              <span class="dl-arrow">↓</span>
             </div>
-          `;
-          fmtList.appendChild(bestRow);
+            <div class="dl-qual">${vQual} ${vCodec}</div>
+            <div class="dl-info">${[vSize, vExt.toUpperCase()].filter(Boolean).join(' · ')}</div>`;
+          btnRow.appendChild(a);
+        } else {
+          const ph = document.createElement('div');
+          ph.className = 'dl-btn disabled';
+          ph.innerHTML = '<div class="dl-qual">No video stream</div>';
+          btnRow.appendChild(ph);
         }
 
-        rows.forEach(({ group, items }) => {
-          const gt = document.createElement('div');
-          gt.className = 'fmt-group-title';
-          gt.textContent = group;
-          fmtList.appendChild(gt);
+        if (bestAud) {
+          const aKbps  = Math.round((parseInt(bestAud.averageBitrate||bestAud.bitrate)||0)/1000);
+          const aCodec = codecLabel(bestAud.mimeType);
+          const aSize  = humanSize(bestAud.contentLength);
+          const aExt   = containerLabel(bestAud.mimeType) || 'mp4';
+          const a = document.createElement('a');
+          a.className = 'dl-btn';
+          a.href = bestAud.url;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.download = `${safe}_audio.${aExt}`;
+          a.innerHTML = `
+            <div class="dl-btn-head">
+              <span class="dl-tag audio">② AUDIO</span>
+              <span class="dl-arrow">↓</span>
+            </div>
+            <div class="dl-qual">${aKbps}kbps ${aCodec}</div>
+            <div class="dl-info">${[aSize, aExt.toUpperCase()].filter(Boolean).join(' · ')}</div>`;
+          btnRow.appendChild(a);
+        } else {
+          const ph = document.createElement('div');
+          ph.className = 'dl-btn disabled';
+          ph.innerHTML = '<div class="dl-qual">No audio stream</div>';
+          btnRow.appendChild(ph);
+        }
 
-          items.forEach(f => {
-            const isAudio = f.mimeType?.includes('audio') && !f.mimeType?.includes('video');
-            const qual = isAudio
-              ? `${Math.round((f.averageBitrate||f.bitrate||0)/1000)}kbps`
-              : (f.qualityLabel || `${f.height}p`);
-            const codec = codecLabel(f.mimeType);
-            const container = containerLabel(f.mimeType);
-            const size = humanSize(f.contentLength);
-            const ext = container || (isAudio ? 'mp3' : 'mp4');
-            const filename = isAudio ? `audio_${qual}.${ext}` : `${d.title||'video'}_${qual}.${ext}`;
-
-            const row = document.createElement('div');
-            row.style.cssText = 'display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem;';
-
-            const a = document.createElement('a');
-            a.className = 'fmt';
-            a.style.flex = '1';
-            a.href = f.url;
-            a.target = '_blank';
-            a.rel = 'noopener';
-            a.download = filename;
-            a.innerHTML = `
-              <div class="fmt-left">
-                <span class="fmt-badge">${qual}</span>
-                <span class="fmt-codec">${codec} · ${ext.toUpperCase()}</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:.6rem">
-                ${size ? `<span class="fmt-size">${size}</span>` : ''}
-                <span class="fmt-arrow">↓</span>
-              </div>
-            `;
-
-            row.appendChild(a);
-            fmtList.appendChild(row);
-          });
-        });
-
-        fmtsEl.style.display = 'block';
-        document.getElementById('merge-section').style.display = 'block';
-        addLog(`✓ Found formats — click one to download!`, 'ok');
+        card.appendChild(btnRow);
 
       } catch(e) {
-        sl.querySelector('.dot').className = 'dot d-err';
-        sl.querySelector('.log-text').textContent = `Error: ${e.message}`;
-        addLog('Make sure you subscribed to YTStream on RapidAPI (free plan).', 'info');
+        setCardState(card, index, 'err', e.message);
       }
-
-      goBtn.disabled = false;
     }
 
-    document.getElementById('url').addEventListener('keydown', e => {
-      if (e.key === 'Enter') go();
-    });
+    function setCardState(card, index, state, msg) {
+      card.className = `vid-card s-${state}`;
+      const statusEl = document.getElementById(`vstatus-${index}`);
+      if (statusEl) statusEl.textContent = msg;
+    }
 
-    // ── Two-file merge state ─────────────────────────────────────────────────
+    // ── MERGE ────────────────────────────────────────────────────────────────
     let _videoFile = null, _audioFile = null;
 
-    function setupDropZone(dzId, onFile, labelId, subId, iconId, fileType) {
-      const dz = document.getElementById(dzId);
+    function setupDZ(id, onFile) {
+      const dz = document.getElementById(id);
       dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
       dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-      dz.addEventListener('drop', e => {
-        e.preventDefault(); dz.classList.remove('drag-over');
-        const f = e.dataTransfer.files[0];
-        if (f) onFile(f);
-      });
+      dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); const f = e.dataTransfer.files[0]; if(f) onFile(f); });
     }
-
-    setupDropZone('dz-video', onVideoFile);
-    setupDropZone('dz-audio', onAudioFile);
+    setupDZ('dz-video', f => onVideoFile(f));
+    setupDZ('dz-audio', f => onAudioFile(f));
 
     function onVideoFile(f) {
       _videoFile = f;
-      document.getElementById('dz-video-icon').textContent = '✅';
-      document.getElementById('dz-video-label').textContent = f.name.length > 22 ? f.name.slice(0,20)+'…' : f.name;
-      document.getElementById('dz-video-sub').textContent = (f.size/1024/1024).toFixed(1)+' MB';
+      document.getElementById('dz-video-icon').textContent  = '✅';
+      document.getElementById('dz-video-label').textContent = f.name.length > 24 ? f.name.slice(0,22)+'…' : f.name;
+      document.getElementById('dz-video-sub').textContent   = (f.size/1048576).toFixed(1)+' MB';
       checkMergeReady();
     }
     function onAudioFile(f) {
       _audioFile = f;
-      document.getElementById('dz-audio-icon').textContent = '✅';
-      document.getElementById('dz-audio-label').textContent = f.name.length > 22 ? f.name.slice(0,20)+'…' : f.name;
-      document.getElementById('dz-audio-sub').textContent = (f.size/1024/1024).toFixed(1)+' MB';
+      document.getElementById('dz-audio-icon').textContent  = '✅';
+      document.getElementById('dz-audio-label').textContent = f.name.length > 24 ? f.name.slice(0,22)+'…' : f.name;
+      document.getElementById('dz-audio-sub').textContent   = (f.size/1048576).toFixed(1)+' MB';
       checkMergeReady();
     }
     function checkMergeReady() {
       const btn = document.getElementById('merge-btn');
-      if (_videoFile && _audioFile) {
-        btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
-      }
+      if (_videoFile && _audioFile) { btn.disabled = false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
     }
 
-    function mlog(msg, type='info') {
+    function mlog(msg, color) {
       const el = document.getElementById('merge-log');
-      el.style.display = 'block';
-      const dc = {spin:'spin',ok:'ok',err:'err'}[type]||'ok';
-      const line = document.createElement('div');
-      line.className = 'mlog-line';
-      line.innerHTML = `<div class="mdot ${dc}"></div><div style="line-height:1.5;color:${type==='err'?'var(--red)':type==='spin'?'var(--accent)':'#4ade80'}">${msg}</div>`;
-      el.appendChild(line);
-      return line;
+      el.innerHTML += `<div style="color:${color||'var(--muted)'}">${msg}</div>`;
     }
     function setMprog(pct, lbl) {
       document.getElementById('merge-prog').style.display = 'block';
-      document.getElementById('mprog-fill').style.width = pct + '%';
+      document.getElementById('mprog-fill').style.width   = pct + '%';
       if (lbl) document.getElementById('mprog-lbl').textContent = lbl;
     }
 
     async function doMerge() {
       if (!_videoFile || !_audioFile) return;
       document.getElementById('merge-log').innerHTML = '';
-      document.getElementById('merge-log').style.display = 'none';
       document.getElementById('merge-prog').style.display = 'none';
       const btn = document.getElementById('merge-btn');
-      btn.disabled = true; btn.style.opacity = '.35';
+      btn.disabled = true; btn.style.opacity = '.3';
 
-      const l1 = mlog('Reading video file…', 'spin');
-      setMprog(5, 'Reading files…');
       try {
+        mlog('Reading video…', 'var(--accent)');
+        setMprog(5, 'Reading files…');
         const videoBuf = await _videoFile.arrayBuffer();
-        l1.querySelector('.mdot').className = 'mdot ok';
-        l1.querySelector('div:last-child').textContent = `✓ Video read (${(_videoFile.size/1024/1024).toFixed(1)} MB)`;
 
-        const l2 = mlog('Reading audio file…', 'spin');
-        setMprog(20, 'Reading audio…');
+        mlog('Reading audio…', 'var(--accent)');
+        setMprog(25, 'Reading audio…');
         const audioBuf = await _audioFile.arrayBuffer();
-        l2.querySelector('.mdot').className = 'mdot ok';
-        l2.querySelector('div:last-child').textContent = `✓ Audio read (${(_audioFile.size/1024/1024).toFixed(1)} MB)`;
 
-        setMprog(35, 'Muxing with MP4Box.js…');
-        const ml = mlog('Muxing streams…', 'spin');
+        mlog('Muxing streams…', 'var(--accent)');
+        setMprog(45, 'Muxing…');
         const outBytes = await muxMP4(new Uint8Array(videoBuf), new Uint8Array(audioBuf));
-        ml.querySelector('.mdot').className = 'mdot ok';
-        ml.querySelector('div:last-child').textContent = '✓ Mux complete';
 
         setMprog(95, 'Saving…');
-        const title = window._mergeTitle || 'video';
-        const safe  = title.replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'_') || 'video';
-        const fname = safe + '_merged.mp4';
+        const safe  = safeName(window._mergeTitle || _videoFile.name);
         const blob  = new Blob([outBytes], { type:'video/mp4' });
         const burl  = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = burl; a.download = fname;
+        a.href = burl; a.download = safe + '_merged.mp4';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        setTimeout(()=>URL.revokeObjectURL(burl), 20000);
+        setTimeout(() => URL.revokeObjectURL(burl), 20000);
         setMprog(100, '✓ Done!');
-        mlog(`✓ Saved as ${fname}`, 'ok');
+        mlog(`✓ Saved as ${safe}_merged.mp4`, 'var(--green)');
       } catch(e) {
         setMprog(0, 'Error');
-        mlog(`Error: ${e.message}`, 'err');
+        mlog(`Error: ${e.message}`, 'var(--red)');
       }
       btn.disabled = false; btn.style.opacity = '1';
     }
 
-    // ── MP4Box mux ───────────────────────────────────────────────────────────
     function muxMP4(videoBytes, audioBytes) {
       return new Promise((resolve, reject) => {
         try {
-          const vFile = MP4Box.createFile();
-          const aFile = MP4Box.createFile();
-          let vInfo = null, aInfo = null;
-          let vSamples = [], aSamples = [];
-          let vDone = false, aDone = false;
-
+          const vFile = MP4Box.createFile(), aFile = MP4Box.createFile();
+          let vInfo=null, aInfo=null, vSamples=[], aSamples=[], vDone=false, aDone=false;
           function finish() {
             if (!vDone || !aDone) return;
             try {
               const out  = MP4Box.createFile();
-              const vTrk = vInfo.tracks[0];
-              const aTrk = aInfo.tracks[0];
-              const vTid = out.addTrack({
-                id:1, type:'video', timescale:vTrk.timescale,
-                width:  vTrk.video ? vTrk.video.width  : 1920,
-                height: vTrk.video ? vTrk.video.height : 1080,
-                hdlr:'vide', name:'VideoHandler',
-                description: vFile.moov.traks[0].mdia.minf.stbl.stsd.entries[0],
-              });
-              const aTid = out.addTrack({
-                id:2, type:'audio', timescale:aTrk.timescale,
-                samplerate:    aTrk.audio ? aTrk.audio.sample_rate   : 44100,
-                channel_count: aTrk.audio ? aTrk.audio.channel_count : 2,
-                hdlr:'soun', name:'SoundHandler',
-                description: aFile.moov.traks[0].mdia.minf.stbl.stsd.entries[0],
-              });
-              for (const s of vSamples) out.addSample(vTid, s.data, {duration:s.duration,cts:s.cts,dts:s.dts,is_sync:s.is_sync});
-              for (const s of aSamples) out.addSample(aTid, s.data, {duration:s.duration,cts:s.cts,dts:s.dts,is_sync:s.is_sync});
-              const ds = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
-              out.save(ds);
-              resolve(new Uint8Array(ds.buffer));
+              const vTrk = vInfo.tracks[0], aTrk = aInfo.tracks[0];
+              const vTid = out.addTrack({ id:1,type:'video',timescale:vTrk.timescale, width:vTrk.video?.width||1920, height:vTrk.video?.height||1080, hdlr:'vide',name:'VideoHandler', description:vFile.moov.traks[0].mdia.minf.stbl.stsd.entries[0] });
+              const aTid = out.addTrack({ id:2,type:'audio',timescale:aTrk.timescale, samplerate:aTrk.audio?.sample_rate||44100, channel_count:aTrk.audio?.channel_count||2, hdlr:'soun',name:'SoundHandler', description:aFile.moov.traks[0].mdia.minf.stbl.stsd.entries[0] });
+              for (const s of vSamples) out.addSample(vTid,s.data,{duration:s.duration,cts:s.cts,dts:s.dts,is_sync:s.is_sync});
+              for (const s of aSamples) out.addSample(aTid,s.data,{duration:s.duration,cts:s.cts,dts:s.dts,is_sync:s.is_sync});
+              const ds = new DataStream(undefined,0,DataStream.BIG_ENDIAN);
+              out.save(ds); resolve(new Uint8Array(ds.buffer));
             } catch(e) { reject(e); }
           }
-
-          vFile.onReady = info => { vInfo=info; vFile.setExtractionOptions(info.tracks[0].id,null,{nbSamples:Infinity}); vFile.start(); };
-          vFile.onSamples = (id,u,s) => vSamples.push(...s);
+          vFile.onReady = i => { vInfo=i; vFile.setExtractionOptions(i.tracks[0].id,null,{nbSamples:Infinity}); vFile.start(); };
+          vFile.onSamples = (_,u,s) => vSamples.push(...s);
           vFile.onFlush   = () => { vDone=true; finish(); };
           vFile.onError   = reject;
-          aFile.onReady = info => { aInfo=info; aFile.setExtractionOptions(info.tracks[0].id,null,{nbSamples:Infinity}); aFile.start(); };
-          aFile.onSamples = (id,u,s) => aSamples.push(...s);
+          aFile.onReady = i => { aInfo=i; aFile.setExtractionOptions(i.tracks[0].id,null,{nbSamples:Infinity}); aFile.start(); };
+          aFile.onSamples = (_,u,s) => aSamples.push(...s);
           aFile.onFlush   = () => { aDone=true; finish(); };
           aFile.onError   = reject;
-
           const vBuf = videoBytes.buffer.slice(0); vBuf.fileStart=0;
           const aBuf = audioBytes.buffer.slice(0); aBuf.fileStart=0;
           vFile.appendBuffer(vBuf); vFile.flush();
@@ -581,7 +585,6 @@
       });
     }
   </script>
-
   <script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js"></script>
 </body>
 </html>
